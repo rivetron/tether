@@ -18,14 +18,14 @@ func captureOutput(f func()) string {
 
 func TestRun(t *testing.T) {
 	output := captureOutput(run)
-	if !strings.Contains(output, "Welcome to Helix!") {
-		t.Errorf("expected output to contain 'Welcome to Helix!', got: %s", output)
+	if !strings.Contains(output, "Welcome to Tether!") {
+		t.Errorf("expected output to contain 'Welcome to Tether!', got: %s", output)
 	}
 }
 
 func TestMainFunc(t *testing.T) {
 	output := captureOutput(main)
-	if !strings.Contains(output, "Welcome to Helix!") {
-		t.Errorf("expected output to contain 'Welcome to Helix!', got: %s", output)
+	if !strings.Contains(output, "Welcome to Tether!") {
+		t.Errorf("expected output to contain 'Welcome to Tether!', got: %s", output)
 	}
 }

@@ -3,7 +3,7 @@ package main
 import "log"
 
 func run() {
-	log.Println("Welcome to Helix!")
+	log.Println("Welcome to Tether!")
 }
 
 func main() {

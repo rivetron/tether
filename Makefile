@@ -1,7 +1,7 @@
 .PHONY: help dev run test test-coverage lint format clean install setup
 
 # Variables
-BINARY_NAME=helix
+BINARY_NAME=tether
 BINARY_PATH=./bin/$(BINARY_NAME)
 
 # Colors
@@ -11,7 +11,7 @@ RED=\033[0;31m
 NC=\033[0m
 
 help: ## 📋 Show available commands
-	@echo "🔥 Helix - Available Commands:"
+	@echo "🔗 Tether - Available Commands:"
 	@echo ""
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  $(GREEN)%-15s$(NC) %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
