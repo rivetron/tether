@@ -10,19 +10,19 @@
 ![Testing](https://img.shields.io/badge/Testing-enabled-success?logo=go&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-yellow?logo=open-source-initiative&logoColor=white)
 
-**Tether** is a structured Go starter template designed for building modular, maintainable, and scalable applications. It follows Go best practices and industry standards to help you bootstrap production-ready projects with minimal setup.
+**Tether** is a production-ready short URL service built on the Helix framework, demonstrating clean architecture and industry best practices.
 
 ---
 
 ## ⚡ Features
 
-- **Clean Architecture**: Domain-driven design with clear separation of concerns
-- **Pre-configured Tooling**:
-  - **Pre-commit**: Hooks to enforce consistency before commits.
-  - **Testing**: Comprehensive testing setup with mocks and fixtures
-- **Modular Structure**: Organized packages for scalability and maintainability
-- **CI/CD**: GitHub Actions workflows for testing and deployment
-- **Security**: Built-in security middleware and best practices
+- **🔗 Short URL Generation**: Create short URLs with custom codes or auto-generated ones
+- **⏰ TTL Support**: Set expiration times with default 1-month TTL (720 hours)
+- **📊 Comprehensive Analytics**: Device, browser, geolocation, and referrer tracking
+- **🔒 Security**: CORS, rate limiting, domain blocking, input validation
+- **⚡ Performance**: Redis caching, MongoDB TTL indexes, optimized queries
+- **🧹 Auto Cleanup**: Background cleanup of expired links with configurable retention
+- **🐳 Production Ready**: Docker setup, health checks, graceful shutdown
 
 ---
 
@@ -32,37 +32,91 @@
 
 Ensure you have the following installed:
 
-- **Go**: v1.24 or later
-- **Make**: For running build commands (optional)
+- **Go**: v1.25 or later
+- **Docker & Docker Compose**: For database services
+- **Make**: For development commands
 
 ---
 
-### ⚙️ Installation
+### 🐳 Quick Start with Docker
 
-1. **Clone the repository:**
-
-   ```bash
-   git clone https://github.com/Kosha-Nirman/tether.git
-   cd tether
-   ```
-
-2. **Install dependencies:**
+1. **Clone and setup:**
 
    ```bash
-   go mod tidy
+   git clone https://github.com/Kosha-Nirman/helix.git
+   cd helix
+   cp .env.example .env
    ```
 
-3. **Run the application:**
+2. **Start all services:**
 
    ```bash
-   go run src/cmd/main.go
+   docker-compose up -d
    ```
 
-4. **Or use Make commands:**
+3. **Run LinkForge:**
 
    ```bash
-   make run
+   make dev  # Development with hot reload
+   # or
+   make run  # Production build
    ```
+
+4. **Verify installation:**
+
+   ```bash
+   curl http://localhost:8080/health
+   ```
+
+5. **Access API Documentation:**
+
+   ```bash
+   # Swagger UI
+   open http://localhost:8080/docs/index.html
+
+   # JSON API spec
+   curl http://localhost:8080/docs/swagger.json
+   ```
+
+### 📖 API Usage
+
+**Create a short link:**
+
+```bash
+curl -X POST http://localhost:8080/api/links \
+  -H "Content-Type: application/json" \
+  -d '{
+    "original_url": "https://example.com",
+    "custom_code": "my-link",
+    "ttl_hours": 720
+  }'
+```
+
+**Access short link:**
+
+```bash
+curl -L http://localhost:8080/abc123
+```
+
+**View analytics:**
+
+```bash
+curl http://localhost:8080/api/links/abc123/stats
+```
+
+### 📚 API Documentation
+
+LinkForge includes comprehensive Swagger/OpenAPI documentation:
+
+- **Interactive UI**: Visit `http://localhost:8080/docs/` for the Swagger UI
+- **JSON Spec**: Available at `http://localhost:8080/docs/swagger.json`
+- **YAML Spec**: Available at `http://localhost:8080/docs/swagger.yaml`
+
+**Generate updated docs:**
+
+```bash
+make swagger  # Regenerate Swagger docs from code annotations
+```
 
 ---
 
