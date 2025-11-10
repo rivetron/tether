@@ -43,8 +43,8 @@ Ensure you have the following installed:
 1. **Clone and setup:**
 
    ```bash
-   git clone https://github.com/Kosha-Nirman/helix.git
-   cd helix
+   git clone https://github.com/Kosha-Nirman/tether.git
+   cd tether
    cp .env.example .env
    ```
 
