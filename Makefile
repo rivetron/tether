@@ -94,6 +94,52 @@ setup: ## 🛠️ Setup development environment
 	@go mod tidy
 	@echo "$(GREEN)✅ Setup complete$(NC)"
 
+# Tether specific commands
+docker-up: ## 🐳 Start Docker services (MongoDB + Redis)
+	@echo "$(YELLOW)🐳 Starting Docker services...$(NC)"
+	@docker-compose up -d mongodb redis
+	@echo "$(GREEN)✅ Services started$(NC)"
+
+docker-down: ## 🛑 Stop Docker services
+	@echo "$(YELLOW)🛑 Stopping Docker services...$(NC)"
+	@docker-compose down
+	@echo "$(GREEN)✅ Services stopped$(NC)"
+
+docker-logs: ## 📋 View Docker logs
+	@docker-compose logs -f
+
+air-install: ## 🌪️ Install Air for hot reload
+	@echo "$(YELLOW)🌪️ Installing Air...$(NC)"
+	@go install github.com/air-verse/air@latest
+	@echo "$(GREEN)✅ Air installed$(NC)"
+
+dev-air: air-install ## 🔥 Run with Air hot reload
+	@echo "$(YELLOW)🔥 Starting with Air hot reload...$(NC)"
+	@air
+
+swagger: ## 📚 Generate Swagger docs
+	@echo "$(YELLOW)📚 Generating Swagger docs...$(NC)"
+	@go install github.com/swaggo/swag/cmd/swag@latest
+	@swag init -g src/cmd/main.go -o docs/
+	@echo "$(GREEN)✅ Swagger docs generated$(NC)"
+
+swagger-validate: ## ✅ Validate Swagger docs
+	@echo "$(YELLOW)✅ Validating Swagger docs...$(NC)"
+	@if command -v swagger > /dev/null; then \
+		swagger validate docs/swagger.yaml; \
+	else \
+		echo "$(YELLOW)⚠️  swagger-cli not installed, skipping validation$(NC)"; \
+	fi
+
+test-api: ## 🧪 Test API endpoints
+	@echo "$(YELLOW)🧪 Testing API endpoints...$(NC)"
+	@echo "Health check:"
+	@curl -s http://localhost:8080/health | head -1 || echo "❌ Service not running"
+	@echo ""
+	@echo "Swagger docs:"
+	@curl -s http://localhost:8080/docs/swagger.json | head -1 || echo "❌ Swagger not available"
+	@echo "$(GREEN)✅ API test complete$(NC)"
+
 all: format lint vet test
 
 ci: format-check lint vet coverage-check ## 🤖 CI pipeline
