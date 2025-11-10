@@ -54,7 +54,7 @@ Ensure you have the following installed:
    docker-compose up -d
    ```
 
-3. **Run LinkForge:**
+3. **Run Tether:**
 
    ```bash
    make dev  # Development with hot reload
@@ -106,7 +106,7 @@ curl http://localhost:8080/api/links/abc123/stats
 
 ### 📚 API Documentation
 
-LinkForge includes comprehensive Swagger/OpenAPI documentation:
+Tether includes comprehensive Swagger/OpenAPI documentation:
 
 - **Interactive UI**: Visit `http://localhost:8080/docs/` for the Swagger UI
 - **JSON Spec**: Available at `http://localhost:8080/docs/swagger.json`
