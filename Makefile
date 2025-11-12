@@ -134,10 +134,10 @@ swagger-validate: ## ✅ Validate Swagger docs
 test-api: ## 🧪 Test API endpoints
 	@echo "$(YELLOW)🧪 Testing API endpoints...$(NC)"
 	@echo "Health check:"
-	@curl -s http://localhost:8080/health | head -1 || echo "❌ Service not running"
+	@curl -s http://localhost:5000/health | head -1 || echo "❌ Service not running"
 	@echo ""
 	@echo "Swagger docs:"
-	@curl -s http://localhost:8080/docs/swagger.json | head -1 || echo "❌ Swagger not available"
+	@curl -s http://localhost:5000/docs/swagger.json | head -1 || echo "❌ Swagger not available"
 	@echo "$(GREEN)✅ API test complete$(NC)"
 
 all: format lint vet test

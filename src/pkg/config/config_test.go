@@ -18,9 +18,9 @@ func TestLoad_WithDefaults(t *testing.T) {
 	require.NotNil(t, config)
 
 	// Test Server defaults
-	assert.Equal(t, 8080, config.Server.Port)
+	assert.Equal(t, 5000, config.Server.Port)
 	assert.Equal(t, "0.0.0.0", config.Server.Host)
-	assert.Equal(t, "http://localhost:8080", config.Server.BaseURL)
+	assert.Equal(t, "http://localhost:5000", config.Server.BaseURL)
 	assert.Equal(t, 30*time.Second, config.Server.ReadTimeout)
 	assert.Equal(t, 30*time.Second, config.Server.WriteTimeout)
 	assert.Equal(t, 120*time.Second, config.Server.IdleTimeout)
