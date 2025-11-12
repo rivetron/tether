@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Kosha-Nirman/tether/src/pkg/cache"
 	"github.com/Kosha-Nirman/tether/src/pkg/config"
 	"github.com/Kosha-Nirman/tether/src/pkg/database"
 	"github.com/gin-gonic/gin"
@@ -50,6 +51,21 @@ func run() error {
 		}
 	}()
 
+	// ? Initialize Cache
+	cacheConfig := cache.Config{
+		Addr:     cfg.Cache.Addr,
+		Password: cfg.Cache.Password,
+		DB:       cfg.Cache.DB,
+		TTL:      cfg.Cache.TTL,
+	}
+
+	cc := cache.Connect(cacheConfig)
+	defer func() {
+		if err := cc.Close(); err != nil {
+			log.Printf("⚠️ Error closing cache connection: %v", err)
+		}
+	}()
+
 	// ? Test Connections in background
 	go func() {
 		log.Println("🔍 Testing database connection...")
@@ -57,6 +73,13 @@ func run() error {
 			log.Printf("⚠️ Database health check failed: %v", err)
 		} else {
 			log.Println("✅ Database connection healthy")
+		}
+
+		log.Println("🔍 Testing cache connection...")
+		if err := cc.Health(context.Background()); err != nil {
+			log.Printf("⚠️ Cache health check failed: %v", err)
+		} else {
+			log.Println("✅ Cache connection healthy")
 		}
 	}()
 
