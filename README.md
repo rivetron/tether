@@ -43,8 +43,8 @@ Ensure you have the following installed:
 1. **Clone and setup:**
 
    ```bash
-   git clone https://github.com/Kosha-Nirman/helix.git
-   cd helix
+   git clone https://github.com/Kosha-Nirman/tether.git
+   cd tether
    cp .env.example .env
    ```
 
@@ -54,7 +54,7 @@ Ensure you have the following installed:
    docker-compose up -d
    ```
 
-3. **Run LinkForge:**
+3. **Run Tether:**
 
    ```bash
    make dev  # Development with hot reload
@@ -65,17 +65,17 @@ Ensure you have the following installed:
 4. **Verify installation:**
 
    ```bash
-   curl http://localhost:8080/health
+   curl http://localhost:5000/health
    ```
 
 5. **Access API Documentation:**
 
    ```bash
    # Swagger UI
-   open http://localhost:8080/docs/index.html
+   open http://localhost:5000/docs/index.html
 
    # JSON API spec
-   curl http://localhost:8080/docs/swagger.json
+   curl http://localhost:5000/docs/swagger.json
    ```
 
 ### 📖 API Usage
@@ -83,7 +83,7 @@ Ensure you have the following installed:
 **Create a short link:**
 
 ```bash
-curl -X POST http://localhost:8080/api/links \
+curl -X POST http://localhost:5000/api/links \
   -H "Content-Type: application/json" \
   -d '{
     "original_url": "https://example.com",
@@ -95,22 +95,22 @@ curl -X POST http://localhost:8080/api/links \
 **Access short link:**
 
 ```bash
-curl -L http://localhost:8080/abc123
+curl -L http://localhost:5000/abc123
 ```
 
 **View analytics:**
 
 ```bash
-curl http://localhost:8080/api/links/abc123/stats
+curl http://localhost:5000/api/links/abc123/stats
 ```
 
 ### 📚 API Documentation
 
-LinkForge includes comprehensive Swagger/OpenAPI documentation:
+Tether includes comprehensive Swagger/OpenAPI documentation:
 
-- **Interactive UI**: Visit `http://localhost:8080/docs/` for the Swagger UI
-- **JSON Spec**: Available at `http://localhost:8080/docs/swagger.json`
-- **YAML Spec**: Available at `http://localhost:8080/docs/swagger.yaml`
+- **Interactive UI**: Visit `http://localhost:5000/docs/` for the Swagger UI
+- **JSON Spec**: Available at `http://localhost:5000/docs/swagger.json`
+- **YAML Spec**: Available at `http://localhost:5000/docs/swagger.yaml`
 
 **Generate updated docs:**
 
