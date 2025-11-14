@@ -1,3 +1,19 @@
+// Package main provides entry point for the Tether service
+// @title Tether API
+// @version 1.0.0
+// @description A modern, scalable short URL service
+// @termsOfService https://github.com/Kosha-Nirman/tether
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:5000
+// @BasePath /
+// @schemes http https
+
+// @tag.name Health
+// @tag.description Health check endpoints
+
 package main
 
 import (
@@ -9,6 +25,9 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/Kosha-Nirman/tether/docs" // Import generated docs
+	"github.com/Kosha-Nirman/tether/src/api/handlers"
+	"github.com/Kosha-Nirman/tether/src/api/routes"
 	"github.com/Kosha-Nirman/tether/src/pkg/cache"
 	"github.com/Kosha-Nirman/tether/src/pkg/config"
 	"github.com/Kosha-Nirman/tether/src/pkg/database"
@@ -86,10 +105,19 @@ func run() error {
 	// * Setup Gin
 	r := gin.New()
 
+	// * Add recovery middleware
+	r.Use(gin.Recovery())
+
 	// ? Add Logger in development mode
 	if cfg.Server.GinMode == "debug" {
 		r.Use(gin.Logger())
 	}
+
+	// * Initialize handlers
+	healthHandler := handlers.NewHealthHandler(db, cc)
+
+	// ? Setup all routes following Helix structure
+	routes.SetupRoutes(r, cfg, healthHandler)
 
 	// ? Http server
 	server := &http.Server{
@@ -112,7 +140,7 @@ func run() error {
 	// * Wait for interrupt signal
 	<-ctx.Done()
 
-	log.Println("🛑 Shutting down LinkForge server...")
+	log.Println("🛑 Shutting down Tether server...")
 
 	// * Graceful shutdown with timeout
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -121,7 +149,7 @@ func run() error {
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		log.Printf("⚠️ Server forced to shutdown: %v", err)
 	} else {
-		log.Println("✅ LinkForge server shutdown completed")
+		log.Println("✅ Tether server shutdown completed")
 	}
 
 	return nil
