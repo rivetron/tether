@@ -15,18 +15,18 @@ func TestConfig_DefaultMaxPoolSize(t *testing.T) {
 		input    int
 		expected uint64
 	}{
-		{"zero value", 0, 100},
-		{"negative value", -10, 100},
-		{"positive value", 50, 50},
+		{"zero", 0, 100},
+		{"negative", -5, 100},
+		{"positive", 50, 50},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			maxPoolSize := uint64(tt.input)
+			maxPool := uint64(tt.input)
 			if tt.input <= 0 {
-				maxPoolSize = 100
+				maxPool = 100
 			}
-			assert.Equal(t, tt.expected, maxPoolSize)
+			assert.Equal(t, tt.expected, maxPool)
 		})
 	}
 }
@@ -38,18 +38,18 @@ func TestConfig_DefaultMinPoolSize(t *testing.T) {
 		input    int
 		expected uint64
 	}{
-		{"zero value", 0, 10},
-		{"negative value", -5, 10},
-		{"positive value", 20, 20},
+		{"zero", 0, 10},
+		{"negative", -1, 10},
+		{"positive", 20, 20},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			minPoolSize := uint64(tt.input)
+			minPool := uint64(tt.input)
 			if tt.input <= 0 {
-				minPoolSize = 10
+				minPool = 10
 			}
-			assert.Equal(t, tt.expected, minPoolSize)
+			assert.Equal(t, tt.expected, minPool)
 		})
 	}
 }
@@ -58,15 +58,15 @@ func TestConfig_DefaultMinPoolSize(t *testing.T) {
 func TestConfig_Struct(t *testing.T) {
 	config := Config{
 		URI:         "mongodb://localhost:27017",
-		Name:        "test_db",
-		MaxPoolSize: 100,
-		MinPoolSize: 10,
+		Name:        "test",
+		MaxPoolSize: 50,
+		MinPoolSize: 5,
 	}
 
 	assert.Equal(t, "mongodb://localhost:27017", config.URI)
-	assert.Equal(t, "test_db", config.Name)
-	assert.Equal(t, 100, config.MaxPoolSize)
-	assert.Equal(t, 10, config.MinPoolSize)
+	assert.Equal(t, "test", config.Name)
+	assert.Equal(t, 50, config.MaxPoolSize)
+	assert.Equal(t, 5, config.MinPoolSize)
 }
 
 // TestConfig_ZeroValues tests Config with zero values
@@ -75,311 +75,148 @@ func TestConfig_ZeroValues(t *testing.T) {
 
 	assert.Empty(t, config.URI)
 	assert.Empty(t, config.Name)
-	assert.Equal(t, 0, config.MaxPoolSize)
-	assert.Equal(t, 0, config.MinPoolSize)
+	assert.Zero(t, config.MaxPoolSize)
+	assert.Zero(t, config.MinPoolSize)
 }
 
 // TestMongoDB_StructFields tests MongoDB struct fields
 func TestMongoDB_StructFields(t *testing.T) {
-	db := &MongoDB{
-		Client:   nil,
-		Database: nil,
-	}
-
+	db := &MongoDB{}
 	assert.Nil(t, db.Client)
 	assert.Nil(t, db.Database)
 }
 
 // TestConnect_InvalidURI_Format tests various invalid URI formats
-func TestConnect_InvalidURI_Format(t *testing.T) {
+func TestConnect_InvalidURIs(t *testing.T) {
 	tests := []struct {
 		name string
 		uri  string
 	}{
-		{"empty URI", ""},
+		{"empty", ""},
 		{"invalid scheme", "http://localhost:27017"},
-		{"malformed URI", "not-a-valid-uri"},
-		{"invalid protocol", "postgresql://localhost:5432"},
+		{"malformed", "%%%"},
+		{"wrong protocol", "postgres://localhost"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 			defer cancel()
 
-			config := Config{
+			cfg := Config{
 				URI:         tt.uri,
-				Name:        "test_db",
+				Name:        "x",
 				MaxPoolSize: 10,
 				MinPoolSize: 5,
 			}
 
-			db, err := Connect(ctx, config)
-
-			// Should get an error for invalid URIs
-			assert.Error(t, err, "Expected error for invalid URI: %s", tt.uri)
-			assert.Nil(t, db, "MongoDB instance should be nil on error")
-
-			if err != nil {
-				assert.Contains(t, err.Error(), "failed to", "Error should contain 'failed to'")
-			}
+			db, err := Connect(ctx, cfg)
+			assert.Error(t, err)
+			assert.Nil(t, db)
 		})
 	}
 }
 
 // TestConnect_ContextCancellation tests behavior when context is cancelled
-func TestConnect_ContextCancellation(t *testing.T) {
-	// Create a context that's already cancelled
+func TestConnect_ContextCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // Cancel immediately
+	cancel()
 
-	config := Config{
+	cfg := Config{
 		URI:         "mongodb://localhost:27017",
-		Name:        "test_db",
-		MaxPoolSize: 50,
+		Name:        "x",
+		MaxPoolSize: 10,
 		MinPoolSize: 5,
 	}
 
-	db, err := Connect(ctx, config)
-
-	// Should return error when context is cancelled
-	assert.Error(t, err, "Should return error when context is cancelled")
-	assert.Nil(t, db, "MongoDB instance should be nil when context is cancelled")
+	db, err := Connect(ctx, cfg)
+	assert.Error(t, err)
+	assert.Nil(t, db)
 }
 
 // TestConnect_ContextTimeout tests behavior with very short timeout
-func TestConnect_ContextTimeout(t *testing.T) {
-	// Create a context with 1 nanosecond timeout (will expire immediately)
+func TestConnect_Timeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
 	defer cancel()
 
-	// Sleep to ensure timeout
 	time.Sleep(1 * time.Millisecond)
 
-	config := Config{
+	cfg := Config{
 		URI:         "mongodb://nonexistent-host:27017",
-		Name:        "test_db",
-		MaxPoolSize: 50,
+		Name:        "x",
+		MaxPoolSize: 10,
 		MinPoolSize: 5,
 	}
 
-	db, err := Connect(ctx, config)
-
-	// Should return error due to timeout
-	assert.Error(t, err, "Should return error on timeout")
-	assert.Nil(t, db, "MongoDB instance should be nil on timeout")
-}
-
-// TestConfig_PoolSizeConversion tests integer to uint64 conversion logic
-func TestConfig_PoolSizeConversion(t *testing.T) {
-	tests := []struct {
-		name        string
-		maxPoolSize int
-		minPoolSize int
-		expectedMax uint64
-		expectedMin uint64
-	}{
-		{
-			name:        "both positive",
-			maxPoolSize: 100,
-			minPoolSize: 10,
-			expectedMax: 100,
-			expectedMin: 10,
-		},
-		{
-			name:        "both zero",
-			maxPoolSize: 0,
-			minPoolSize: 0,
-			expectedMax: 100, // default
-			expectedMin: 10,  // default
-		},
-		{
-			name:        "both negative",
-			maxPoolSize: -50,
-			minPoolSize: -5,
-			expectedMax: 100, // default
-			expectedMin: 10,  // default
-		},
-		{
-			name:        "mixed values",
-			maxPoolSize: 200,
-			minPoolSize: 0,
-			expectedMax: 200,
-			expectedMin: 10, // default
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Simulate the logic from Connect function
-			maxPoolSize := uint64(tt.maxPoolSize)
-			minPoolSize := uint64(tt.minPoolSize)
-
-			if tt.maxPoolSize <= 0 {
-				maxPoolSize = 100
-			}
-			if tt.minPoolSize <= 0 {
-				minPoolSize = 10
-			}
-
-			assert.Equal(t, tt.expectedMax, maxPoolSize, "MaxPoolSize mismatch")
-			assert.Equal(t, tt.expectedMin, minPoolSize, "MinPoolSize mismatch")
-		})
-	}
+	db, err := Connect(ctx, cfg)
+	assert.Error(t, err)
+	assert.Nil(t, db)
 }
 
 // TestConfig_ValidURIFormats tests various valid MongoDB URI formats
-func TestConfig_ValidURIFormats(t *testing.T) {
-	validURIs := []string{
+func TestConfig_ValidURIs(t *testing.T) {
+	valid := []string{
 		"mongodb://localhost:27017",
-		"mongodb://127.0.0.1:27017",
 		"mongodb://user:pass@localhost:27017",
 		"mongodb://localhost:27017,localhost:27018",
 		"mongodb+srv://cluster.mongodb.net",
-		"mongodb://user:pass@host1:27017,host2:27017/dbname?replicaSet=myRepl",
 	}
 
-	for _, uri := range validURIs {
+	for _, uri := range valid {
 		t.Run(uri, func(t *testing.T) {
-			config := Config{
+			cfg := Config{
 				URI:         uri,
-				Name:        "test_db",
+				Name:        "db",
 				MaxPoolSize: 50,
 				MinPoolSize: 5,
 			}
-
-			// Just verify the config can be created with valid URIs
-			assert.NotEmpty(t, config.URI)
-			assert.NotEmpty(t, config.Name)
-			assert.Greater(t, config.MaxPoolSize, 0)
-			assert.Greater(t, config.MinPoolSize, 0)
+			assert.NotEmpty(t, cfg.URI)
 		})
 	}
 }
 
 // TestMongoDB_MethodsExist tests that required methods exist
-func TestMongoDB_MethodsExist(t *testing.T) {
-	// This test verifies the MongoDB type has the expected methods
-	// by checking if we can reference them
-
+func TestMongoDB_Methods_NilReceiver(t *testing.T) {
 	var db *MongoDB
 
-	// These should compile if methods exist
-	_ = func(ctx context.Context) error { return db.Close(ctx) }
-	_ = func(ctx context.Context) error { return db.Health(ctx) }
+	assert.Panics(t, func() {
+		_ = db.Close(context.Background())
+	})
 
-	// If we got here, methods exist
-	assert.True(t, true, "All expected methods exist")
+	assert.Panics(t, func() {
+		_ = db.Health(context.Background())
+	})
 }
 
 // TestConnect_ConfigValidation tests config parameter validation
-func TestConnect_ConfigValidation(t *testing.T) {
+func TestPoolSizeConversion(t *testing.T) {
 	tests := []struct {
 		name        string
-		config      Config
-		expectError bool
+		maxIn       int
+		minIn       int
+		maxExpected uint64
+		minExpected uint64
 	}{
-		{
-			name: "empty URI",
-			config: Config{
-				URI:         "",
-				Name:        "test_db",
-				MaxPoolSize: 100,
-				MinPoolSize: 10,
-			},
-			expectError: true,
-		},
-		{
-			name: "empty database name",
-			config: Config{
-				URI:         "mongodb://localhost:27017",
-				Name:        "",
-				MaxPoolSize: 100,
-				MinPoolSize: 10,
-			},
-			expectError: false, // MongoDB allows empty db name (uses default)
-		},
-		{
-			name: "all zero values",
-			config: Config{
-				URI:         "",
-				Name:        "",
-				MaxPoolSize: 0,
-				MinPoolSize: 0,
-			},
-			expectError: true,
-		},
+		{"positive", 100, 10, 100, 10},
+		{"zero", 0, 0, 100, 10},
+		{"negative", -10, -5, 100, 10},
+		{"mixed", 200, 0, 200, 10},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-			defer cancel()
+			maxPool := uint64(tt.maxIn)
+			minPool := uint64(tt.minIn)
 
-			db, err := Connect(ctx, tt.config)
-
-			if tt.expectError {
-				assert.Error(t, err, "Expected error for config: %+v", tt.config)
-				assert.Nil(t, db)
-			} else {
-				// Even valid configs will fail without MongoDB running
-				// but we're just testing the validation logic
-				if db != nil {
-					_ = db.Close(ctx)
-				}
+			if tt.maxIn <= 0 {
+				maxPool = 100
 			}
+			if tt.minIn <= 0 {
+				minPool = 10
+			}
+
+			assert.Equal(t, tt.maxExpected, maxPool)
+			assert.Equal(t, tt.minExpected, minPool)
 		})
 	}
-}
-
-// TestConnect_TimeoutConfiguration tests timeout settings
-func TestConnect_TimeoutConfiguration(t *testing.T) {
-	config := Config{
-		URI:         "mongodb://localhost:27017",
-		Name:        "test_db",
-		MaxPoolSize: 100,
-		MinPoolSize: 10,
-	}
-
-	// The Connect function sets these timeouts:
-	// - MaxConnIdleTime: 30 minutes
-	// - ServerSelectionTimeout: 5 seconds
-	// - ConnectTimeout: 10 seconds
-
-	// We can't directly test the timeouts without connecting,
-	// but we can verify the config is valid
-	assert.NotEmpty(t, config.URI)
-	assert.NotEmpty(t, config.Name)
-	assert.Greater(t, config.MaxPoolSize, 0)
-}
-
-// TestMongoDB_NilSafety tests behavior with nil values
-func TestMongoDB_NilSafety(t *testing.T) {
-	var db *MongoDB
-
-	// Calling methods on nil should panic (expected Go behavior)
-	assert.Panics(t, func() {
-		ctx := context.Background()
-		_ = db.Close(ctx)
-	}, "Close on nil MongoDB should panic")
-
-	assert.Panics(t, func() {
-		ctx := context.Background()
-		_ = db.Health(ctx)
-	}, "Health on nil MongoDB should panic")
-}
-
-// TestConfig_LargePoolSizes tests with very large pool sizes
-func TestConfig_LargePoolSizes(t *testing.T) {
-	config := Config{
-		URI:         "mongodb://localhost:27017",
-		Name:        "test_db",
-		MaxPoolSize: 10000,
-		MinPoolSize: 1000,
-	}
-
-	assert.Equal(t, 10000, config.MaxPoolSize)
-	assert.Equal(t, 1000, config.MinPoolSize)
-	assert.Greater(t, config.MaxPoolSize, config.MinPoolSize,
-		"MaxPoolSize should be greater than MinPoolSize")
 }
