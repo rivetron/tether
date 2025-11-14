@@ -63,12 +63,12 @@ func TestConnect(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			redisCache := Connect(tt.config)
+			defer func() { _ = redisCache.Close() }()
 
 			assert.NotNil(t, redisCache)
 			assert.NotNil(t, redisCache.Client)
 			assert.Equal(t, tt.config.TTL, redisCache.DefaultTTL)
 
-			// Verify client options
 			opts := redisCache.Client.Options()
 			assert.Equal(t, tt.config.Addr, opts.Addr)
 			assert.Equal(t, tt.config.Password, opts.Password)
@@ -86,29 +86,27 @@ func TestRedis_Health(t *testing.T) {
 	t.Run("healthy connection", func(t *testing.T) {
 		mr, redisCache := setupTestRedis(t)
 		defer mr.Close()
-		defer redisCache.Close()
+		defer func() { _ = redisCache.Close() }()
 
 		ctx := context.Background()
 		err := redisCache.Health(ctx)
-
 		assert.NoError(t, err)
 	})
 
 	t.Run("unhealthy connection - server stopped", func(t *testing.T) {
 		mr, redisCache := setupTestRedis(t)
-		mr.Close() // Close the server immediately
-		defer redisCache.Close()
+		mr.Close()
+		defer func() { _ = redisCache.Close() }()
 
 		ctx := context.Background()
 		err := redisCache.Health(ctx)
-
 		assert.Error(t, err)
 	})
 
 	t.Run("health check with timeout context", func(t *testing.T) {
 		mr, redisCache := setupTestRedis(t)
 		defer mr.Close()
-		defer redisCache.Close()
+		defer func() { _ = redisCache.Close() }()
 
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
@@ -120,10 +118,10 @@ func TestRedis_Health(t *testing.T) {
 	t.Run("health check with cancelled context", func(t *testing.T) {
 		mr, redisCache := setupTestRedis(t)
 		defer mr.Close()
-		defer redisCache.Close()
+		defer func() { _ = redisCache.Close() }()
 
 		ctx, cancel := context.WithCancel(context.Background())
-		cancel() // Cancel immediately
+		cancel()
 
 		err := redisCache.Health(ctx)
 		assert.Error(t, err)
@@ -139,7 +137,6 @@ func TestRedis_Close(t *testing.T) {
 		err := redisCache.Close()
 		assert.NoError(t, err)
 
-		// Verify connection is closed by trying to ping
 		ctx := context.Background()
 		err = redisCache.Health(ctx)
 		assert.Error(t, err)
@@ -150,13 +147,10 @@ func TestRedis_Close(t *testing.T) {
 		mr, redisCache := setupTestRedis(t)
 		defer mr.Close()
 
-		// Close once
 		err := redisCache.Close()
 		assert.NoError(t, err)
 
-		// Close again - should handle gracefully
 		err = redisCache.Close()
-		// Redis client returns "redis: client is closed" error
 		assert.Error(t, err)
 	})
 }
@@ -165,15 +159,13 @@ func TestRedis_Integration(t *testing.T) {
 	t.Run("full lifecycle test", func(t *testing.T) {
 		mr, redisCache := setupTestRedis(t)
 		defer mr.Close()
-		defer redisCache.Close()
+		defer func() { _ = redisCache.Close() }()
 
 		ctx := context.Background()
 
-		// Test health check
 		err := redisCache.Health(ctx)
 		assert.NoError(t, err)
 
-		// Test basic operations to verify connection works
 		err = redisCache.Client.Set(ctx, "test_key", "test_value", redisCache.DefaultTTL).Err()
 		assert.NoError(t, err)
 
@@ -181,7 +173,6 @@ func TestRedis_Integration(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "test_value", val)
 
-		// Test close
 		err = redisCache.Close()
 		assert.NoError(t, err)
 	})
@@ -191,24 +182,22 @@ func TestRedis_ConnectionPool(t *testing.T) {
 	t.Run("verify connection pool configuration", func(t *testing.T) {
 		mr, redisCache := setupTestRedis(t)
 		defer mr.Close()
-		defer redisCache.Close()
+		defer func() { _ = redisCache.Close() }()
 
 		opts := redisCache.Client.Options()
-
-		assert.Equal(t, 50, opts.PoolSize, "Pool size should be 50")
-		assert.Equal(t, 10, opts.MinIdleConns, "Min idle connections should be 10")
+		assert.Equal(t, 50, opts.PoolSize)
+		assert.Equal(t, 10, opts.MinIdleConns)
 	})
 
 	t.Run("verify timeout configurations", func(t *testing.T) {
 		mr, redisCache := setupTestRedis(t)
 		defer mr.Close()
-		defer redisCache.Close()
+		defer func() { _ = redisCache.Close() }()
 
 		opts := redisCache.Client.Options()
-
-		assert.Equal(t, 5*time.Second, opts.DialTimeout, "Dial timeout should be 5 seconds")
-		assert.Equal(t, 5*time.Second, opts.ReadTimeout, "Read timeout should be 5 seconds")
-		assert.Equal(t, 5*time.Second, opts.WriteTimeout, "Write timeout should be 5 seconds")
+		assert.Equal(t, 5*time.Second, opts.DialTimeout)
+		assert.Equal(t, 5*time.Second, opts.ReadTimeout)
+		assert.Equal(t, 5*time.Second, opts.WriteTimeout)
 	})
 }
 
@@ -218,21 +207,9 @@ func TestRedis_DefaultTTL(t *testing.T) {
 		ttl         time.Duration
 		expectedTTL time.Duration
 	}{
-		{
-			name:        "5 minute TTL",
-			ttl:         5 * time.Minute,
-			expectedTTL: 5 * time.Minute,
-		},
-		{
-			name:        "1 hour TTL",
-			ttl:         1 * time.Hour,
-			expectedTTL: 1 * time.Hour,
-		},
-		{
-			name:        "30 second TTL",
-			ttl:         30 * time.Second,
-			expectedTTL: 30 * time.Second,
-		},
+		{"5 minute TTL", 5 * time.Minute, 5 * time.Minute},
+		{"1 hour TTL", 1 * time.Hour, 1 * time.Hour},
+		{"30 second TTL", 30 * time.Second, 30 * time.Second},
 	}
 
 	for _, tt := range tests {
@@ -247,14 +224,14 @@ func TestRedis_DefaultTTL(t *testing.T) {
 			}
 
 			redisCache := Connect(config)
-			defer redisCache.Close()
+			defer func() { _ = redisCache.Close() }()
 
 			assert.Equal(t, tt.expectedTTL, redisCache.DefaultTTL)
 		})
 	}
 }
 
-// Benchmark tests
+// Benchmarks
 func BenchmarkRedis_Health(b *testing.B) {
 	mr, err := miniredis.Run()
 	require.NoError(b, err)
@@ -266,7 +243,7 @@ func BenchmarkRedis_Health(b *testing.B) {
 	}
 
 	redisCache := Connect(config)
-	defer redisCache.Close()
+	defer func() { _ = redisCache.Close() }()
 
 	ctx := context.Background()
 
@@ -289,6 +266,6 @@ func BenchmarkRedis_Connect(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		redisCache := Connect(config)
-		redisCache.Close()
+		_ = redisCache.Close()
 	}
 }
