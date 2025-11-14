@@ -1,3 +1,5 @@
+//go:build !test
+
 // Package main provides entry point for the Tether service
 // @title Tether API
 // @version 1.0.0

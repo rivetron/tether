@@ -28,11 +28,11 @@ run: dev ## 🏃 Alias for dev
 
 test: ## 🧪 Run tests
 	@echo "$(YELLOW)🧪 Running tests...$(NC)"
-	@go test ./... -v
+	@go test -tags=test ./... -v
 
 test-coverage: ## 📊 Run tests with coverage
 	@echo "$(YELLOW)📊 Running tests with coverage...$(NC)"
-	@go test ./... -coverprofile=coverage.out -covermode=atomic
+	@go test -tags=test ./... -coverprofile=coverage.out -covermode=atomic
 	@go tool cover -func=coverage.out | grep total | awk '{print "Coverage: " $$3}'
 	@go tool cover -html=coverage.out -o coverage.html
 	@echo "$(GREEN)📊 Coverage report: coverage.html$(NC)"
