@@ -64,6 +64,7 @@ require (
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
+	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.uber.org/mock v0.6.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	golang.org/x/arch v0.23.0 // indirect
@@ -79,6 +80,7 @@ require (
 )
 
 require (
+	github.com/alicebob/miniredis/v2 v2.35.0
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/gin-gonic/gin v1.11.0
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
