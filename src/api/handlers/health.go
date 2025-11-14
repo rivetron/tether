@@ -5,14 +5,20 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Kosha-Nirman/tether/src/pkg/cache"
-	"github.com/Kosha-Nirman/tether/src/pkg/database"
 	"github.com/gin-gonic/gin"
 )
 
+type DB interface {
+	Health(ctx context.Context) error
+}
+
+type Cache interface {
+	Health(ctx context.Context) error
+}
+
 type HealthHandler struct {
-	db *database.MongoDB
-	cc *cache.Redis
+	db DB
+	cc Cache
 }
 
 type ServiceHealth struct {
@@ -28,10 +34,10 @@ type HealthResponse struct {
 	Services  map[string]ServiceHealth `json:"services"`
 }
 
-func NewHealthHandler(db *database.MongoDB, cc *cache.Redis) *HealthHandler {
+func NewHealthHandler(db DB, cc Cache) *HealthHandler {
 	return &HealthHandler{
-		db,
-		cc,
+		db: db,
+		cc: cc,
 	}
 }
 
@@ -67,7 +73,7 @@ func (h *HealthHandler) Health(c *gin.Context) {
 
 	// ? Check Redis
 	redisStart := time.Now()
-	if err := h.db.Health(ctx); err != nil {
+	if err := h.cc.Health(ctx); err != nil {
 		services["redis"] = ServiceHealth{
 			Status:  "unhealthy",
 			Message: err.Error(),
