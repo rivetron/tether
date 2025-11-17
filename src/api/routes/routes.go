@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/Kosha-Nirman/tether/src/api/handlers"
+	"github.com/Kosha-Nirman/tether/src/internal/middleware"
 	"github.com/Kosha-Nirman/tether/src/pkg/config"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -40,4 +41,32 @@ func SetupRoutes(r *gin.Engine, config *config.Config, healthHandler *handlers.H
 		// * Otherwise, let swagger handle it
 		ginSwagger.WrapHandler(swaggerFiles.Handler)(c)
 	})
+
+	// * CORS
+	corsConfig := &middleware.CORSConfig{
+		AllowedOrigins: config.Security.AllowedOrigins,
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{
+			"Origin", "Content-Length", "Content-Type", "Authorization",
+			"X-Requested-With", "X-Request-ID",
+		},
+		ExposedHeaders:   []string{"X-Request-ID"},
+		AllowCredentials: false,
+		MaxAge:           86400,
+	}
+
+	// * Security
+	securityConfig := &middleware.SecurityConfig{
+		TrustedProxies:           config.Security.TrustedProxies,
+		RequiredHeaders:          []string{},
+		BlockedUserAgents:        []string{},
+		EnableHTSTS:              true,
+		EnableXSSProtection:      true,
+		EnableContentTypeNoSniff: true,
+		EnableFrameOptions:       true,
+	}
+
+	// ? Apply Middleware
+	r.Use(middleware.CORSMiddleware(corsConfig))
+	r.Use(middleware.SecurityMiddleware(securityConfig))
 }
