@@ -29,3 +29,22 @@ type ShortLink struct {
 	CreatorIP   string             `bson:"creator_ip,omitempty" json:"creator_ip,omitempty"`
 	Metadata    LinkMetadata       `bson:"metadata" json:"metadata"`
 }
+
+// CreateLinkRequest represents the request to create a short link
+type CreateLinkRequest struct {
+	OriginalURL string            `json:"original_url" validate:"required,url"`
+	CustomCode  *string           `json:"custom_code,omitempty" validate:"omitempty,alphanum,min=3,max=50"`
+	TTLHours    *int              `json:"ttl_hours,omitempty" validate:"omitempty,min=1,max=8760"` // max 1 year
+	Metadata    *LinkMetadata     `json:"metadata,omitempty"`
+	Custom      map[string]string `json:"custom,omitempty"`
+}
+
+// CreateLinkResponse represents the response after creating a short link
+type CreateLinkResponse struct {
+	ID          string     `json:"id"`
+	OriginalURL string     `json:"original_url"`
+	ShortURL    string     `json:"short_url"`
+	ShortCode   string     `json:"short_code"`
+	CreatedAt   time.Time  `json:"created_at"`
+	ExpiresAt   *time.Time `json:"expires_at,omitempty"`
+}
