@@ -165,3 +165,23 @@ func (r *Redis) BatchSet(ctx context.Context, items map[string]any, ttl time.Dur
 	_, err := pipe.Exec(ctx)
 	return err
 }
+
+// <-------------------- Key Functions -------------------->
+func CacheKey(prefix, key string) string {
+	return fmt.Sprintf("tether:%s:%s", prefix, key)
+}
+
+// LinkCacheKey generates cache key for links
+func LinkCacheKey(shortCode string) string {
+	return CacheKey("link", shortCode)
+}
+
+// StatsCacheKey generates cache key for link statistics
+func StatsCacheKey(shortCode string) string {
+	return CacheKey("stats", shortCode)
+}
+
+// AnalyticsCacheKey generates cache key for analytics
+func AnalyticsCacheKey(shortCode, period string) string {
+	return CacheKey("analytics", fmt.Sprintf("%s:%s", shortCode, period))
+}
