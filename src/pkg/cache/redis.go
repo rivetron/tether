@@ -108,3 +108,60 @@ func (r *Redis) SetNX(ctx context.Context, key string, value any, ttl time.Durat
 
 	return r.Client.SetNX(ctx, key, data, ttl).Result()
 }
+
+// <-------------------- Batch Functions -------------------->
+
+func (r *Redis) BatchGet(ctx context.Context, keys []string) (map[string]any, error) {
+	if len(keys) == 0 {
+		return make(map[string]any), nil
+	}
+
+	pipe := r.Client.Pipeline()
+	cmds := make(map[string]*redis.StringCmd)
+
+	for _, key := range keys {
+		cmds[key] = pipe.Get(ctx, key)
+	}
+
+	_, err := pipe.Exec(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute pipeline: %w", err)
+	}
+
+	result := make(map[string]any)
+	for key, cmd := range cmds {
+		if cmd.Err() == nil {
+			var value any
+			if err := json.Unmarshal([]byte(cmd.Val()), &value); err == nil {
+				result[key] = value
+			}
+
+		}
+	}
+
+	return result, nil
+}
+
+func (r *Redis) BatchSet(ctx context.Context, items map[string]any, ttl time.Duration) error {
+	if len(items) == 0 {
+		return nil
+	}
+
+	if ttl == 0 {
+		ttl = r.DefaultTTL
+	}
+
+	pipe := r.Client.Pipeline()
+
+	for key, value := range items {
+		data, err := json.Marshal(value)
+		if err != nil {
+			return fmt.Errorf("failed to marshal value for key %s: %w", key, err)
+		}
+
+		pipe.Set(ctx, key, data, ttl)
+	}
+
+	_, err := pipe.Exec(ctx)
+	return err
+}
