@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -111,7 +112,18 @@ func (s *LinkService) CreateLink(ctx context.Context, req *models.CreateLinkRequ
 		return nil, fmt.Errorf("failed to create link: %w", err)
 	}
 
-	// TODO: Cache the link for faster access
+	cacheKey := cache.LinkCacheKey(shortCode)
+	cacheTTL := s.config.Cache.TTL
+	if expiresAt != nil {
+		remaining := time.Until(*expiresAt)
+		if remaining < cacheTTL {
+			cacheTTL = remaining
+		}
+	}
+
+	if err := s.cache.Set(ctx, cacheKey, link, cacheTTL); err != nil {
+		log.Printf("Failed to cache link: %v", err)
+	}
 
 	// * Generate the short URL
 	shortURL := fmt.Sprintf("%s/%s", strings.TrimRight(s.config.Server.BaseURL, "/"), shortCode)
@@ -127,6 +139,64 @@ func (s *LinkService) CreateLink(ctx context.Context, req *models.CreateLinkRequ
 
 	return response, nil
 }
+
+func (s *LinkService) GetLink(ctx context.Context, shortCode string) (*models.ShortLink, error) {
+	// * Try cache first
+	cacheKey := cache.LinkCacheKey(shortCode)
+	var link models.ShortLink
+
+	err := s.cache.Get(ctx, cacheKey, &link)
+	if err == nil {
+		// ? Check if link is still valid
+		if link.ExpiresAt != nil && link.ExpiresAt.Before(time.Now()) {
+			// * Link has expired, remove from cache
+			if err := s.cache.Delete(ctx, cacheKey); err != nil {
+				log.Printf("Warning: Failed to delete expired link from cache: %v", err)
+			}
+
+			return nil, fmt.Errorf("link has expired")
+		}
+
+		return &link, nil
+	}
+
+	// ? Cache miss
+	linkPtr, err := s.linkRepo.GetByShortCode(ctx, shortCode)
+	if err != nil {
+		return nil, err
+	}
+
+	// * Cache the result
+	cacheTTL := s.config.Cache.TTL
+	if linkPtr.ExpiresAt != nil {
+		remaining := time.Until(*linkPtr.ExpiresAt)
+		if remaining < cacheTTL {
+			cacheTTL = remaining
+		}
+	}
+
+	if err := s.cache.Set(ctx, cacheKey, link, cacheTTL); err != nil {
+		log.Printf("Failed to cache link: %v", err)
+	}
+
+	return linkPtr, nil
+}
+
+func (s *LinkService) DeleteLink(ctx context.Context, shortCode string) error {
+	if err := s.linkRepo.DeleteByShortCode(ctx, shortCode); err != nil {
+		return err
+	}
+
+	// * Remove from cache
+	cacheKey := cache.LinkCacheKey(shortCode)
+	if err := s.cache.Delete(ctx, cacheKey); err != nil {
+		log.Printf("Warning: Failed to delete link from cache: %v", err)
+	}
+
+	return nil
+}
+
+// <-------------------- Helper Functions -------------------->
 
 func (s *LinkService) generateUniqueShortCode(ctx context.Context) (string, error) {
 	maxAttempts := 10
