@@ -132,7 +132,7 @@ func (r *LinkRepository) UpdateByShortCode(ctx context.Context, shortCode string
 }
 
 // ? Deletes a link by ID, setting is_active to false
-func (r *LinkRepository) DeleteByID(ctx context.Context, id primitive.ObjectID) error {
+func (r *LinkRepository) Delete(ctx context.Context, id primitive.ObjectID) error {
 	filter := bson.M{"_id": id}
 	update := bson.M{"$set": bson.M{"is_active": false}}
 
