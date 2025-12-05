@@ -182,6 +182,52 @@ func (s *LinkService) GetLink(ctx context.Context, shortCode string) (*models.Sh
 	return linkPtr, nil
 }
 
+func (s *LinkService) UpdateLink(
+	ctx context.Context,
+	shortCode string,
+	mutate func(link *models.ShortLink) error,
+) (*models.ShortLink, error) {
+	// * Fetch link
+	link, err := s.linkRepo.GetByShortCode(ctx, shortCode)
+	if err != nil {
+		return nil, err
+	}
+
+	// * Apply mutation (increment clicks, extend TTL, etc.)
+	mutate(link)
+
+	// * Update DB
+	updatedLink, err := s.linkRepo.UpdateByShortCode(ctx, shortCode, link)
+	if err != nil {
+		return nil, err
+	}
+
+	// * Handle cache update
+	cacheKey := cache.LinkCacheKey(shortCode)
+
+	// ? TTL logic
+	cacheTTL := s.cache.DefaultTTL
+	if link.ExpiresAt != nil {
+		remaining := time.Until(*link.ExpiresAt)
+		if remaining < cacheTTL {
+			cacheTTL = remaining
+		}
+	}
+
+	// ? If link expired or about to expire, just delete the cache
+	if link.ExpiresAt != nil && time.Until(*link.ExpiresAt) <= 0 {
+		_ = s.cache.Delete(ctx, cacheKey)
+		return nil, nil
+	}
+
+	// * Set updated cache
+	if err := s.cache.Set(ctx, cacheKey, link, cacheTTL); err != nil {
+		log.Printf("Warning: failed to update cache: %v", err)
+	}
+
+	return updatedLink, nil
+}
+
 func (s *LinkService) DeleteLink(ctx context.Context, shortCode string) error {
 	if err := s.linkRepo.DeleteByShortCode(ctx, shortCode); err != nil {
 		return err
@@ -194,6 +240,35 @@ func (s *LinkService) DeleteLink(ctx context.Context, shortCode string) error {
 	}
 
 	return nil
+}
+
+// <-------------------- Service Helper Functions -------------------->
+
+func (s *LinkService) IncrementClickCount(ctx context.Context, shortCode string) (*models.ShortLink, error) {
+	return s.UpdateLink(ctx, shortCode, func(link *models.ShortLink) error {
+		link.ClickCount++
+		return nil
+	})
+}
+
+func (s *LinkService) ExtendTTL(ctx context.Context, shortCode string, additionalHours int) (*models.ShortLink, error) {
+	return s.UpdateLink(ctx, shortCode, func(link *models.ShortLink) error {
+		// * Compute new expiry
+		var newExpiresAt time.Time
+		if link.ExpiresAt != nil {
+			newExpiresAt = link.ExpiresAt.Add(time.Duration(additionalHours) * time.Hour)
+		} else {
+			newExpiresAt = time.Now().Add(time.Duration(additionalHours) * time.Hour)
+		}
+
+		// * Validate max TTL
+		if newExpiresAt.After(time.Now().Add(s.config.App.MaxTTL)) {
+			return fmt.Errorf("extended TTL would exceed max allowed TTL")
+		}
+
+		link.ExpiresAt = &newExpiresAt
+		return nil
+	})
 }
 
 // <-------------------- Helper Functions -------------------->
