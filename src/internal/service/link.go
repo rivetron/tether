@@ -271,6 +271,20 @@ func (s *LinkService) ExtendTTL(ctx context.Context, shortCode string, additiona
 	})
 }
 
+func (s *LinkService) ListLinks(ctx context.Context, filters map[string]interface{}, limit, offset int) ([]*models.ShortLink, int64, error) {
+	links, err := s.linkRepo.List(ctx, filters, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	total, err := s.linkRepo.Count(ctx, filters)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return links, total, nil
+}
+
 // <-------------------- Helper Functions -------------------->
 
 func (s *LinkService) generateUniqueShortCode(ctx context.Context) (string, error) {
