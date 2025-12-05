@@ -167,17 +167,30 @@ func (r *LinkRepository) DeleteByShortCode(ctx context.Context, shortCode string
 
 // <-------------------- Helper Functions -------------------->
 
-// ? Increment Click count
-func (r *LinkRepository) IncrementClickCount(ctx context.Context, shortCode string) error {
-	filter := bson.M{"short_code": shortCode}
-	update := bson.M{"$inc": bson.M{"click_count": 1}}
+// ? Retrieves links with pagination and filtering
+func (r *LinkRepository) List(ctx context.Context, filters map[string]interface{}, limit, offset int) ([]*models.ShortLink, error) {
+	// * Build filter
+	filter := bson.M{"is_active": true}
+	maps.Copy(filter, filters)
 
-	_, err := r.collection.UpdateOne(ctx, filter, update)
+	// * Set up options
+	opts := options.Find().
+		SetLimit(int64(limit)).
+		SetSkip(int64(offset)).
+		SetSort(bson.D{{Key: "created_at", Value: -1}})
+
+	cursor, err := r.collection.Find(ctx, filter, opts)
 	if err != nil {
-		return fmt.Errorf("failed to increment click count: %w", err)
+		return nil, fmt.Errorf("failed to find links: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var links []*models.ShortLink
+	if err := cursor.All(ctx, &links); err != nil {
+		return nil, fmt.Errorf("failed to decode links: %w", err)
 	}
 
-	return nil
+	return links, nil
 }
 
 // ? Check if short link exists
