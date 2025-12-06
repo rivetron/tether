@@ -20,6 +20,58 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/links": {
+            "post": {
+                "description": "Create a new short link with optional custom code and TTL",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Links"
+                ],
+                "summary": "Create a new short link",
+                "parameters": [
+                    {
+                        "description": "Link creation request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateLinkRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateLinkResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "Get the health status of the service and its dependencies",
@@ -48,6 +100,17 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handlers.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.HealthResponse": {
             "type": "object",
             "properties": {
@@ -81,12 +144,99 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "models.CreateLinkRequest": {
+            "type": "object",
+            "required": [
+                "original_url"
+            ],
+            "properties": {
+                "custom": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "custom_code": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 3
+                },
+                "metadata": {
+                    "$ref": "#/definitions/models.LinkMetadata"
+                },
+                "original_url": {
+                    "type": "string"
+                },
+                "ttl_hours": {
+                    "description": "max 1 year",
+                    "type": "integer",
+                    "maximum": 8760,
+                    "minimum": 1
+                }
+            }
+        },
+        "models.CreateLinkResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "original_url": {
+                    "type": "string"
+                },
+                "short_code": {
+                    "type": "string"
+                },
+                "short_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.LinkMetadata": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "custom": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                },
+                "user_agent": {
+                    "type": "string"
+                }
+            }
         }
     },
     "tags": [
         {
             "description": "Health check endpoints",
             "name": "Health"
+        },
+        {
+            "description": "Short link operations",
+            "name": "Links"
         }
     ]
 }`

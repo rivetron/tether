@@ -1,5 +1,12 @@
 basePath: /
 definitions:
+  handlers.ErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
   handlers.HealthResponse:
     properties:
       services:
@@ -22,6 +29,62 @@ definitions:
       status:
         type: string
     type: object
+  models.CreateLinkRequest:
+    properties:
+      custom:
+        additionalProperties:
+          type: string
+        type: object
+      custom_code:
+        maxLength: 50
+        minLength: 3
+        type: string
+      metadata:
+        $ref: '#/definitions/models.LinkMetadata'
+      original_url:
+        type: string
+      ttl_hours:
+        description: max 1 year
+        maximum: 8760
+        minimum: 1
+        type: integer
+    required:
+    - original_url
+    type: object
+  models.CreateLinkResponse:
+    properties:
+      created_at:
+        type: string
+      expires_at:
+        type: string
+      id:
+        type: string
+      original_url:
+        type: string
+      short_code:
+        type: string
+      short_url:
+        type: string
+    type: object
+  models.LinkMetadata:
+    properties:
+      category:
+        type: string
+      custom:
+        additionalProperties:
+          type: string
+        type: object
+      description:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+      user_agent:
+        type: string
+    type: object
 host: localhost:5000
 info:
   contact: {}
@@ -33,6 +96,40 @@ info:
   title: Tether API
   version: 1.0.0
 paths:
+  /api/links:
+    post:
+      consumes:
+      - application/json
+      description: Create a new short link with optional custom code and TTL
+      parameters:
+      - description: Link creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateLinkRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.CreateLinkResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Create a new short link
+      tags:
+      - Links
   /health:
     get:
       description: Get the health status of the service and its dependencies
@@ -57,3 +154,5 @@ swagger: "2.0"
 tags:
 - description: Health check endpoints
   name: Health
+- description: Short link operations
+  name: Links
