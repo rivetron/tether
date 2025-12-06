@@ -1,0 +1,84 @@
+package handlers
+
+import (
+	"net/http"
+
+	"github.com/Kosha-Nirman/tether/src/internal/models"
+	"github.com/Kosha-Nirman/tether/src/internal/service"
+	"github.com/Kosha-Nirman/tether/src/pkg/utils"
+	"github.com/gin-gonic/gin"
+)
+
+type LinkHandler struct {
+	linkService *service.LinkService
+}
+
+type ErrorResponse struct {
+	Error   string `json:"error"`
+	Message string `json:"message"`
+}
+
+type PaginationResponse struct {
+	Total  int64 `json:"total"`
+	Limit  int   `json:"limit"`
+	Offset int   `json:"offset"`
+}
+
+type LinkListResponse struct {
+	Links      []*models.ShortLink `json:"links"`
+	Pagination PaginationResponse  `json:"pagination"`
+}
+
+func NewLinkHandler(linkService *service.LinkService) *LinkHandler {
+	return &LinkHandler{
+		linkService: linkService,
+	}
+}
+
+// CreateLink creates a new short link
+// @Summary Create a new short link
+// @Description Create a new short link with optional custom code and TTL
+// @Tags Links
+// @Accept json
+// @Produce json
+// @Param request body models.CreateLinkRequest true "Link creation request"
+// @Success 201 {object} models.CreateLinkResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 409 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /api/links [post]
+func (h *LinkHandler) CreateLink(c *gin.Context) {
+	var req models.CreateLinkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error:   "Invalid request format",
+			Message: err.Error(),
+		})
+		return
+	}
+
+	// * Get creator IP
+	creatorIP := utils.GetClientIP(c.Request)
+
+	// * Create the Link
+	response, err := h.linkService.CreateLink(c.Request.Context(), &req, creatorIP)
+	if err != nil {
+		status := http.StatusInternalServerError
+
+		if err.Error() == "invalid URL format" || err.Error() == "invalid custom code format" {
+			status = http.StatusBadRequest
+		}
+
+		if err.Error() == "custom code already in use" || err.Error() == "domain is not allowed" {
+			status = http.StatusConflict
+		}
+
+		c.JSON(status, ErrorResponse{
+			Error:   "failed to create a link",
+			Message: err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, response)
+}
