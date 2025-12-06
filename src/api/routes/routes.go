@@ -13,7 +13,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func SetupRoutes(r *gin.Engine, config *config.Config, healthHandler *handlers.HealthHandler) {
+func SetupRoutes(r *gin.Engine, config *config.Config, healthHandler *handlers.HealthHandler, linkHandler *handlers.LinkHandler) {
 	// Health check routes
 	r.GET("/health", healthHandler.Health)
 
@@ -69,4 +69,17 @@ func SetupRoutes(r *gin.Engine, config *config.Config, healthHandler *handlers.H
 	// ? Apply Middleware
 	r.Use(middleware.CORSMiddleware(corsConfig))
 	r.Use(middleware.SecurityMiddleware(securityConfig))
+
+	// * API Routes with rate limiting
+	api := r.Group("/api")
+	// TODO: Add rate-limiting middleware
+	// api.Use(middleware.RateLimitingMiddleware())
+	{
+		// * Links management routes
+		links := api.Group("/links")
+		{
+			links.POST("", linkHandler.CreateLink)
+		}
+	}
+
 }
