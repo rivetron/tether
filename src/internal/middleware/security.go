@@ -71,6 +71,17 @@ func SecurityMiddleware(config *SecurityConfig) gin.HandlerFunc {
 	}
 }
 
+// TODO: Implement proper rate limiting
+func RateLimitingMiddleware() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		// 1. Getting client IP
+		// 2. Checking rate limit in Redis/memory store
+		// 3. Updating counters
+		// 4. Blocking if limit exceeded
+		ctx.Next()
+	}
+}
+
 func defaultSecurityConfig() *SecurityConfig {
 	return &SecurityConfig{
 		TrustedProxies:           []string{},

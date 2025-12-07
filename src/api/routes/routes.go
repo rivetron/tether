@@ -72,8 +72,7 @@ func SetupRoutes(r *gin.Engine, config *config.Config, healthHandler *handlers.H
 
 	// * API Routes with rate limiting
 	api := r.Group("/api")
-	// TODO: Add rate-limiting middleware
-	// api.Use(middleware.RateLimitingMiddleware())
+	api.Use(middleware.RateLimitingMiddleware())
 	{
 		// * Links management routes
 		links := api.Group("/links")
