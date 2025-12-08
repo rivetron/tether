@@ -155,3 +155,64 @@ func (h *LinkHandler) DeleteLink(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+// ListLinks lists links with pagination
+// @Summary List links
+// @Description Get a paginated list of links
+// @Tags Links
+// @Produce json
+// @Param limit query int false "Number of links to return" default(10)
+// @Param offset query int false "Number of links to skip" default(0)
+// @Success 200 {object} LinkListResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /api/links [get]
+func (h *LinkHandler) ListLinks(c *gin.Context) {
+	// * Parse query parameters
+	limitStr := c.DefaultQuery("limit", "10")
+	offsetStr := c.DefaultQuery("offset", "0")
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit < 1 || limit > 100 {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error:   "Invalid limit parameter",
+			Message: "Limit must be between 1 and 100",
+		})
+		return
+	}
+
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil || offset < 0 {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error:   "Invalid offset parameter",
+			Message: "Offset must be non-negative",
+		})
+		return
+	}
+
+	// * Build filters
+	filters := make(map[string]any)
+	if creatorIP := c.Query("creator_ip"); creatorIP != "" {
+		filters["creator_ip"] = creatorIP
+	}
+
+	links, total, err := h.linkService.ListLinks(c.Request.Context(), filters, limit, offset)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "Failed to list links",
+			Message: err.Error(),
+		})
+		return
+	}
+
+	response := LinkListResponse{
+		Links: links,
+		Pagination: PaginationResponse{
+			Total:  total,
+			Limit:  limit,
+			Offset: offset,
+		},
+	}
+
+	c.JSON(http.StatusOK, response)
+}
