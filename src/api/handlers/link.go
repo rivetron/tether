@@ -82,3 +82,40 @@ func (h *LinkHandler) CreateLink(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, response)
 }
+
+// GetLink retrieves link information
+// @Summary Get link information
+// @Description Get detailed information about a short link
+// @Tags Links
+// @Produce json
+// @Param shortCode path string true "Short code of the link"
+// @Success 200 {object} models.ShortLink
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /api/links/{shortCode} [get]
+func (h *LinkHandler) GetLink(c *gin.Context) {
+	shortCode := c.Param("shortCode")
+	if shortCode == "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error:   "Invalid request",
+			Message: "Short code is required",
+		})
+		return
+	}
+
+	link, err := h.linkService.GetLink(c.Request.Context(), shortCode)
+	if err != nil {
+		status := http.StatusInternalServerError
+		if err.Error() == "link not found" || err.Error() == "link has expired" {
+			status = http.StatusNotFound
+		}
+
+		c.JSON(status, ErrorResponse{
+			Error:   "Failed to get link",
+			Message: err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, link)
+}

@@ -76,6 +76,7 @@ func SetupRoutes(r *gin.Engine, config *config.Config, healthHandler *handlers.H
 	{
 		// * Links management routes
 		links := api.Group("/links")
+		links.GET("/:shortCode", linkHandler.GetLink)
 		{
 			links.POST("", linkHandler.CreateLink)
 		}
