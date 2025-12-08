@@ -119,3 +119,39 @@ func (h *LinkHandler) GetLink(c *gin.Context) {
 
 	c.JSON(http.StatusOK, link)
 }
+
+// DeleteLink deletes a short link
+// @Summary Delete a short link
+// @Description Soft delete a short link (deactivate)
+// @Tags Links
+// @Param shortCode path string true "Short code of the link"
+// @Success 204 "Link deleted successfully"
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /api/links/{shortCode} [delete]
+func (h *LinkHandler) DeleteLink(c *gin.Context) {
+	shortCode := c.Param("shortCode")
+	if shortCode == "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error:   "Invalid request",
+			Message: "Short code is required",
+		})
+		return
+	}
+
+	err := h.linkService.DeleteLink(c.Request.Context(), shortCode)
+	if err != nil {
+		status := http.StatusInternalServerError
+		if err.Error() == "link not found" {
+			status = http.StatusNotFound
+		}
+
+		c.JSON(status, ErrorResponse{
+			Error:   "Failed to delete link",
+			Message: err.Error(),
+		})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
