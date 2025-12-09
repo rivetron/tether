@@ -84,4 +84,10 @@ func SetupRoutes(r *gin.Engine, config *config.Config, healthHandler *handlers.H
 		}
 	}
 
+	// Redirect routes
+	redirect := r.Group("/")
+	{
+		redirect.GET("/:shortCode", linkHandler.RedirectLink)
+	}
+
 }

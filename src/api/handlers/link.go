@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"context"
+	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/Kosha-Nirman/tether/src/internal/models"
 	"github.com/Kosha-Nirman/tether/src/internal/service"
@@ -215,4 +218,50 @@ func (h *LinkHandler) ListLinks(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+// RedirectLink handles link redirection
+// @Summary Redirect to original URL
+// @Description Redirect to the original URL and record analytics
+// @Tags Links
+// @Param shortCode path string true "Short code of the link"
+// @Success 302 "Redirect to original URL"
+// @Failure 404 {object} ErrorResponse
+// @Failure 410 {object} ErrorResponse "Link expired"
+// @Failure 500 {object} ErrorResponse
+// @Router /{shortCode} [get]
+func (h *LinkHandler) RedirectLink(c *gin.Context) {
+	shortCode := c.Param("shortCode")
+	if shortCode == "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error:   "Invalid request",
+			Message: "Short code is required",
+		})
+		return
+	}
+
+	// * Get the link
+	link, err := h.linkService.GetLink(c.Request.Context(), shortCode)
+	if err != nil {
+		if err.Error() == "link not found" {
+			c.JSON(http.StatusNotFound, ErrorResponse{
+				Error:   "Link not found",
+				Message: "The requested short link does not exist",
+			})
+		} else if err.Error() == "link has expired" {
+			c.JSON(http.StatusGone, ErrorResponse{
+				Error:   "Link expired",
+				Message: "This short link has expired",
+			})
+		} else {
+			c.JSON(http.StatusInternalServerError, ErrorResponse{
+				Error:   "Internal error",
+				Message: "Failed to process request",
+			})
+		}
+		return
+	}
+
+	// * Redirect to original URL
+	c.Redirect(http.StatusFound, link.OriginalURL)
 }
