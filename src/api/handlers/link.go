@@ -262,6 +262,15 @@ func (h *LinkHandler) RedirectLink(c *gin.Context) {
 		return
 	}
 
+	// * Increment click count (async)
+	go func() {
+		ctx := context.Background()
+
+		if _, err := h.linkService.IncrementClickCount(ctx, shortCode); err != nil {
+			log.Printf("Failed to increment click count: %v", err)
+		}
+	}()
+
 	// * Redirect to original URL
 	c.Redirect(http.StatusFound, link.OriginalURL)
 }
