@@ -38,13 +38,3 @@ type CreateLinkRequest struct {
 	Metadata    *LinkMetadata     `json:"metadata,omitempty"`
 	Custom      map[string]string `json:"custom,omitempty"`
 }
-
-// CreateLinkResponse represents the response after creating a short link
-type CreateLinkResponse struct {
-	ID          string     `json:"id"`
-	OriginalURL string     `json:"original_url"`
-	ShortURL    string     `json:"short_url"`
-	ShortCode   string     `json:"short_code"`
-	CreatedAt   time.Time  `json:"created_at"`
-	ExpiresAt   *time.Time `json:"expires_at,omitempty"`
-}

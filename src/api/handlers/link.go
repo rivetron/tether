@@ -45,7 +45,7 @@ func NewLinkHandler(linkService *service.LinkService) *LinkHandler {
 // @Accept json
 // @Produce json
 // @Param request body models.CreateLinkRequest true "Link creation request"
-// @Success 201 {object} models.CreateLinkResponse
+// @Success 201 {object} models.ShortLink
 // @Failure 400 {object} ErrorResponse
 // @Failure 409 {object} ErrorResponse
 // @Failure 500 {object} ErrorResponse

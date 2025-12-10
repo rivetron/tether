@@ -28,7 +28,7 @@ func NewLinkService(linkRepo *repository.LinkRepository, cache *cache.Redis, con
 	}
 }
 
-func (s *LinkService) CreateLink(ctx context.Context, req *models.CreateLinkRequest, creatorIP string) (*models.CreateLinkResponse, error) {
+func (s *LinkService) CreateLink(ctx context.Context, req *models.CreateLinkRequest, creatorIP string) (*models.ShortLink, error) {
 	// ? Validate the original URL
 	if !utils.IsValidURL(req.OriginalURL) {
 		return nil, fmt.Errorf("invalid URL format")
@@ -125,19 +125,7 @@ func (s *LinkService) CreateLink(ctx context.Context, req *models.CreateLinkRequ
 		log.Printf("Failed to cache link: %v", err)
 	}
 
-	// * Generate the short URL
-	shortURL := fmt.Sprintf("%s/%s", strings.TrimRight(s.config.Server.BaseURL, "/"), shortCode)
-
-	response := &models.CreateLinkResponse{
-		ID:          createdLink.ID.Hex(),
-		OriginalURL: createdLink.OriginalURL,
-		CreatedAt:   createdLink.CreatedAt,
-		ExpiresAt:   createdLink.ExpiresAt,
-		ShortCode:   createdLink.ShortCode,
-		ShortURL:    shortURL,
-	}
-
-	return response, nil
+	return createdLink, nil
 }
 
 func (s *LinkService) GetLink(ctx context.Context, shortCode string) (*models.ShortLink, error) {
