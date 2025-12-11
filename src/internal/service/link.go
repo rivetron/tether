@@ -239,26 +239,6 @@ func (s *LinkService) IncrementClickCount(ctx context.Context, shortCode string)
 	})
 }
 
-func (s *LinkService) ExtendTTL(ctx context.Context, shortCode string, additionalHours int) (*models.ShortLink, error) {
-	return s.UpdateLink(ctx, shortCode, func(link *models.ShortLink) error {
-		// * Compute new expiry
-		var newExpiresAt time.Time
-		if link.ExpiresAt != nil {
-			newExpiresAt = link.ExpiresAt.Add(time.Duration(additionalHours) * time.Hour)
-		} else {
-			newExpiresAt = time.Now().Add(time.Duration(additionalHours) * time.Hour)
-		}
-
-		// * Validate max TTL
-		if newExpiresAt.After(time.Now().Add(s.config.App.MaxTTL)) {
-			return fmt.Errorf("extended TTL would exceed max allowed TTL")
-		}
-
-		link.ExpiresAt = &newExpiresAt
-		return nil
-	})
-}
-
 func (s *LinkService) ListLinks(ctx context.Context, filters map[string]interface{}, limit, offset int) ([]*models.ShortLink, int64, error) {
 	links, err := s.linkRepo.List(ctx, filters, limit, offset)
 	if err != nil {
