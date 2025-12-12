@@ -78,6 +78,7 @@ func SetupRoutes(r *gin.Engine, config *config.Config, healthHandler *handlers.H
 		links := api.Group("/links")
 		links.GET("", linkHandler.ListLinks)
 		links.GET("/:shortCode", linkHandler.GetLink)
+		links.PUT("/:shortCode", linkHandler.UpdateLink)
 		links.DELETE("/:shortCode", linkHandler.DeleteLink)
 		{
 			links.POST("", linkHandler.CreateLink)

@@ -123,6 +123,79 @@ func (h *LinkHandler) GetLink(c *gin.Context) {
 	c.JSON(http.StatusOK, link)
 }
 
+// UpdateLink updates fields of an existing short link
+// @Summary Update a short link
+// @Description Update certain fields of a short link such as TTL or expiry
+// @Tags Links
+// @Accept json
+// @Produce json
+// @Param shortCode path string true "Short code of the link"
+// @Param request body models.UpdateLinkRequest true "Fields to update"
+// @Success 200 {object} models.ShortLink
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /api/links/{shortCode} [put]
+func (h *LinkHandler) UpdateLink(c *gin.Context) {
+	shortCode := c.Param("shortCode")
+
+	var req models.UpdateLinkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error:   "Invalid request body",
+			Message: err.Error(),
+		})
+		return
+	}
+
+	updatedLink, err := h.linkService.UpdateLink(
+		c.Request.Context(),
+		shortCode,
+		func(link *models.ShortLink) error {
+
+			if req.OriginalURL != nil {
+				link.OriginalURL = *req.OriginalURL
+			}
+
+			if req.CustomCode != nil {
+				link.CustomCode = req.CustomCode
+			}
+
+			if req.ExpiresAt != nil {
+				link.ExpiresAt = req.ExpiresAt
+			}
+
+			if req.IsActive != nil {
+				link.IsActive = *req.IsActive
+			}
+
+			if req.Metadata != nil {
+				link.Metadata = *req.Metadata
+			}
+
+			if req.Custom != nil {
+				link.Metadata.Custom = req.Custom
+			}
+
+			return nil
+		},
+	)
+
+	if err != nil {
+		status := http.StatusInternalServerError
+		if err.Error() == "link not found" {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, ErrorResponse{
+			Error:   "Failed to update link",
+			Message: err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, updatedLink)
+}
+
 // DeleteLink deletes a short link
 // @Summary Delete a short link
 // @Description Soft delete a short link (deactivate)
