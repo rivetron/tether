@@ -38,3 +38,13 @@ type CreateLinkRequest struct {
 	Metadata    *LinkMetadata     `json:"metadata,omitempty"`
 	Custom      map[string]string `json:"custom,omitempty"`
 }
+
+// UpdateLinkRequest represents the fields that can be updated for a short link
+type UpdateLinkRequest struct {
+	OriginalURL *string           `json:"original_url,omitempty" validate:"omitempty,url"`
+	CustomCode  *string           `json:"custom_code,omitempty" validate:"omitempty,alphanum,min=3,max=50"`
+	ExpiresAt   *time.Time        `json:"expires_at,omitempty"`
+	IsActive    *bool             `json:"is_active,omitempty"`
+	Metadata    *LinkMetadata     `json:"metadata,omitempty"`
+	Custom      map[string]string `json:"custom,omitempty"`
+}
