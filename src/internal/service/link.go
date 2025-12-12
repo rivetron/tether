@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/Kosha-Nirman/tether/src/internal/models"
@@ -175,42 +174,52 @@ func (s *LinkService) UpdateLink(
 	shortCode string,
 	mutate func(link *models.ShortLink) error,
 ) (*models.ShortLink, error) {
-	// * Fetch link
+	// * Fetch existing link
 	link, err := s.linkRepo.GetByShortCode(ctx, shortCode)
 	if err != nil {
+		return nil, fmt.Errorf("failed to get link: %w", err)
+	}
+
+	// * Apply mutation and handle its error
+	if err := mutate(link); err != nil {
 		return nil, err
 	}
 
-	// * Apply mutation (increment clicks, extend TTL, etc.)
-	mutate(link)
+	// * Central TTL validation: ensure ExpiresAt does not exceed MaxTTL
+	if link.ExpiresAt != nil {
+		if link.ExpiresAt.After(time.Now().Add(s.config.App.MaxTTL)) {
+			return nil, fmt.Errorf("expires_at exceeds maximum allowed TTL")
+		}
+	}
 
-	// * Update DB
+	// * Persist DB update
 	updatedLink, err := s.linkRepo.UpdateByShortCode(ctx, shortCode, link)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to update link: %w", err)
 	}
 
-	// * Handle cache update
+	// * Cache handling
 	cacheKey := cache.LinkCacheKey(shortCode)
 
-	// ? TTL logic
+	// ? If the link is expired (ExpiresAt set and in past) -> delete cache
+	if updatedLink.ExpiresAt != nil && time.Until(*updatedLink.ExpiresAt) <= 0 {
+		if err := s.cache.Delete(ctx, cacheKey); err != nil {
+			log.Printf("Warning: failed to delete expired link from cache (%s): %v", shortCode, err)
+		}
+		return updatedLink, nil
+	}
+
+	// * Determine TTL for cache entry
 	cacheTTL := s.cache.DefaultTTL
-	if link.ExpiresAt != nil {
-		remaining := time.Until(*link.ExpiresAt)
+	if updatedLink.ExpiresAt != nil {
+		remaining := time.Until(*updatedLink.ExpiresAt)
 		if remaining < cacheTTL {
 			cacheTTL = remaining
 		}
 	}
 
-	// ? If link expired or about to expire, just delete the cache
-	if link.ExpiresAt != nil && time.Until(*link.ExpiresAt) <= 0 {
-		_ = s.cache.Delete(ctx, cacheKey)
-		return nil, nil
-	}
-
-	// * Set updated cache
-	if err := s.cache.Set(ctx, cacheKey, link, cacheTTL); err != nil {
-		log.Printf("Warning: failed to update cache: %v", err)
+	if err := s.cache.Set(ctx, cacheKey, updatedLink, cacheTTL); err != nil {
+		log.Printf("Warning: failed to update cache for link %s: %v", shortCode, err)
 	}
 
 	return updatedLink, nil
