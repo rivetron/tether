@@ -94,7 +94,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.CreateLinkResponse"
+                            "$ref": "#/definitions/models.ShortLink"
                         }
                     },
                     "400": {
@@ -142,6 +142,63 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/models.ShortLink"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update certain fields of a short link such as TTL or expiry",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Links"
+                ],
+                "summary": "Update a short link",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Short code of the link",
+                        "name": "shortCode",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Fields to update",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateLinkRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ShortLink"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "404": {
@@ -365,29 +422,6 @@ const docTemplate = `{
                 }
             }
         },
-        "models.CreateLinkResponse": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "expires_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "original_url": {
-                    "type": "string"
-                },
-                "short_code": {
-                    "type": "string"
-                },
-                "short_url": {
-                    "type": "string"
-                }
-            }
-        },
         "models.LinkMetadata": {
             "type": "object",
             "properties": {
@@ -451,6 +485,34 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "short_code": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UpdateLinkRequest": {
+            "type": "object",
+            "properties": {
+                "custom": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "custom_code": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 3
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/models.LinkMetadata"
+                },
+                "original_url": {
                     "type": "string"
                 }
             }

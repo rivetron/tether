@@ -69,21 +69,6 @@ definitions:
     required:
     - original_url
     type: object
-  models.CreateLinkResponse:
-    properties:
-      created_at:
-        type: string
-      expires_at:
-        type: string
-      id:
-        type: string
-      original_url:
-        type: string
-      short_code:
-        type: string
-      short_url:
-        type: string
-    type: object
   models.LinkMetadata:
     properties:
       category:
@@ -127,6 +112,25 @@ definitions:
         type: string
     required:
     - original_url
+    type: object
+  models.UpdateLinkRequest:
+    properties:
+      custom:
+        additionalProperties:
+          type: string
+        type: object
+      custom_code:
+        maxLength: 50
+        minLength: 3
+        type: string
+      expires_at:
+        type: string
+      is_active:
+        type: boolean
+      metadata:
+        $ref: '#/definitions/models.LinkMetadata'
+      original_url:
+        type: string
     type: object
 host: localhost:5000
 info:
@@ -215,7 +219,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.CreateLinkResponse'
+            $ref: '#/definitions/models.ShortLink'
         "400":
           description: Bad Request
           schema:
@@ -278,6 +282,44 @@ paths:
           schema:
             $ref: '#/definitions/handlers.ErrorResponse'
       summary: Get link information
+      tags:
+      - Links
+    put:
+      consumes:
+      - application/json
+      description: Update certain fields of a short link such as TTL or expiry
+      parameters:
+      - description: Short code of the link
+        in: path
+        name: shortCode
+        required: true
+        type: string
+      - description: Fields to update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateLinkRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ShortLink'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update a short link
       tags:
       - Links
   /health:
