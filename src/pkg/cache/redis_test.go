@@ -269,3 +269,178 @@ func BenchmarkRedis_Connect(b *testing.B) {
 		_ = redisCache.Close()
 	}
 }
+
+func TestRedis_SetAndGet(t *testing.T) {
+	mr, redisCache := setupTestRedis(t)
+	defer mr.Close()
+	defer redisCache.Close()
+
+	ctx := context.Background()
+
+	type payload struct {
+		Name string `json:"name"`
+		Age  int    `json:"age"`
+	}
+
+	tests := []struct {
+		name  string
+		key   string
+		value payload
+	}{
+		{"simple struct", "user:1", payload{"tejas", 26}},
+		{"another struct", "user:2", payload{"john", 30}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := redisCache.Set(ctx, tt.key, tt.value, 0)
+			require.NoError(t, err)
+
+			var got payload
+			err = redisCache.Get(ctx, tt.key, &got)
+			require.NoError(t, err)
+
+			assert.Equal(t, tt.value, got)
+		})
+	}
+}
+
+func TestRedis_Get_KeyNotFound(t *testing.T) {
+	mr, redisCache := setupTestRedis(t)
+	defer mr.Close()
+	defer redisCache.Close()
+
+	ctx := context.Background()
+
+	var dest any
+	err := redisCache.Get(ctx, "does_not_exist", &dest)
+	assert.Error(t, err)
+}
+
+func TestRedis_Delete(t *testing.T) {
+	mr, redisCache := setupTestRedis(t)
+	defer mr.Close()
+	defer redisCache.Close()
+
+	ctx := context.Background()
+
+	_ = redisCache.Set(ctx, "key1", "value", 0)
+
+	err := redisCache.Delete(ctx, "key1")
+	require.NoError(t, err)
+
+	ok, err := redisCache.Exists(ctx, "key1")
+	require.NoError(t, err)
+	assert.False(t, ok)
+}
+
+func TestRedis_Exists(t *testing.T) {
+	mr, redisCache := setupTestRedis(t)
+	defer mr.Close()
+	defer redisCache.Close()
+
+	ctx := context.Background()
+
+	_ = redisCache.Set(ctx, "abc", "hello", 0)
+
+	ok, err := redisCache.Exists(ctx, "abc")
+	require.NoError(t, err)
+	assert.True(t, ok)
+
+	ok, err = redisCache.Exists(ctx, "nope")
+	require.NoError(t, err)
+	assert.False(t, ok)
+}
+
+func TestRedis_IncrementFunctions(t *testing.T) {
+	mr, redisCache := setupTestRedis(t)
+	defer mr.Close()
+	defer redisCache.Close()
+
+	ctx := context.Background()
+
+	val, err := redisCache.Increment(ctx, "counter")
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), val)
+
+	val, err = redisCache.IncrementBy(ctx, "counter", 5)
+	require.NoError(t, err)
+	assert.Equal(t, int64(6), val)
+}
+
+func TestRedis_SetNX(t *testing.T) {
+	mr, redisCache := setupTestRedis(t)
+	defer mr.Close()
+	defer redisCache.Close()
+
+	ctx := context.Background()
+
+	ok, err := redisCache.SetNX(ctx, "unique:key", "value", 0)
+	require.NoError(t, err)
+	assert.True(t, ok)
+
+	ok, err = redisCache.SetNX(ctx, "unique:key", "new", 0)
+	require.NoError(t, err)
+	assert.False(t, ok)
+}
+
+func TestRedis_BatchSetAndGet(t *testing.T) {
+	mr, redisCache := setupTestRedis(t)
+	defer mr.Close()
+	defer redisCache.Close()
+
+	ctx := context.Background()
+
+	items := map[string]any{
+		"user:1": map[string]any{"name": "tejas", "age": 26},
+		"user:2": map[string]any{"name": "ram", "age": 32},
+	}
+
+	err := redisCache.BatchSet(ctx, items, 0)
+	require.NoError(t, err)
+
+	result, err := redisCache.BatchGet(ctx, []string{"user:1", "user:2"})
+	require.NoError(t, err)
+
+	assert.Len(t, result, 2)
+	assert.Equal(t, "tejas", result["user:1"].(map[string]any)["name"])
+	assert.Equal(t, float64(32), result["user:2"].(map[string]any)["age"])
+}
+
+func TestRedis_BatchGet_EmptyList(t *testing.T) {
+	mr, redisCache := setupTestRedis(t)
+	defer mr.Close()
+	defer redisCache.Close()
+
+	ctx := context.Background()
+
+	result, err := redisCache.BatchGet(ctx, []string{})
+	require.NoError(t, err)
+	assert.Empty(t, result)
+}
+
+func TestCacheKeyFunctions(t *testing.T) {
+	tests := []struct {
+		name     string
+		keyFunc  func() string
+		expected string
+	}{
+		{
+			"CacheKey",
+			func() string { return CacheKey("demo", "123") },
+			"tether:demo:123",
+		},
+		{
+			"LinkCacheKey",
+			func() string { return LinkCacheKey("abc") },
+			"tether:link:abc",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.keyFunc()
+			assert.Equal(t, tt.expected, got)
+		})
+	}
+}

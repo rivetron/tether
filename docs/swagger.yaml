@@ -1,5 +1,12 @@
 basePath: /
 definitions:
+  handlers.ErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
   handlers.HealthResponse:
     properties:
       services:
@@ -13,6 +20,24 @@ definitions:
       version:
         type: string
     type: object
+  handlers.LinkListResponse:
+    properties:
+      links:
+        items:
+          $ref: '#/definitions/models.ShortLink'
+        type: array
+      pagination:
+        $ref: '#/definitions/handlers.PaginationResponse'
+    type: object
+  handlers.PaginationResponse:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+    type: object
   handlers.ServiceHealth:
     properties:
       latency:
@@ -20,6 +45,91 @@ definitions:
       message:
         type: string
       status:
+        type: string
+    type: object
+  models.CreateLinkRequest:
+    properties:
+      custom:
+        additionalProperties:
+          type: string
+        type: object
+      custom_code:
+        maxLength: 50
+        minLength: 3
+        type: string
+      metadata:
+        $ref: '#/definitions/models.LinkMetadata'
+      original_url:
+        type: string
+      ttl_hours:
+        description: max 1 year
+        maximum: 8760
+        minimum: 1
+        type: integer
+    required:
+    - original_url
+    type: object
+  models.LinkMetadata:
+    properties:
+      category:
+        type: string
+      custom:
+        additionalProperties:
+          type: string
+        type: object
+      description:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+      user_agent:
+        type: string
+    type: object
+  models.ShortLink:
+    properties:
+      click_count:
+        type: integer
+      created_at:
+        type: string
+      creator_ip:
+        type: string
+      custom_code:
+        type: string
+      expires_at:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      metadata:
+        $ref: '#/definitions/models.LinkMetadata'
+      original_url:
+        type: string
+      short_code:
+        type: string
+    required:
+    - original_url
+    type: object
+  models.UpdateLinkRequest:
+    properties:
+      custom:
+        additionalProperties:
+          type: string
+        type: object
+      custom_code:
+        maxLength: 50
+        minLength: 3
+        type: string
+      expires_at:
+        type: string
+      is_active:
+        type: boolean
+      metadata:
+        $ref: '#/definitions/models.LinkMetadata'
+      original_url:
         type: string
     type: object
 host: localhost:5000
@@ -33,6 +143,185 @@ info:
   title: Tether API
   version: 1.0.0
 paths:
+  /{shortCode}:
+    get:
+      description: Redirect to the original URL and record analytics
+      parameters:
+      - description: Short code of the link
+        in: path
+        name: shortCode
+        required: true
+        type: string
+      responses:
+        "302":
+          description: Redirect to original URL
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "410":
+          description: Link expired
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Redirect to original URL
+      tags:
+      - Links
+  /api/links:
+    get:
+      description: Get a paginated list of links
+      parameters:
+      - default: 10
+        description: Number of links to return
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of links to skip
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.LinkListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: List links
+      tags:
+      - Links
+    post:
+      consumes:
+      - application/json
+      description: Create a new short link with optional custom code and TTL
+      parameters:
+      - description: Link creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateLinkRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.ShortLink'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Create a new short link
+      tags:
+      - Links
+  /api/links/{shortCode}:
+    delete:
+      description: Soft delete a short link (deactivate)
+      parameters:
+      - description: Short code of the link
+        in: path
+        name: shortCode
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Link deleted successfully
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Delete a short link
+      tags:
+      - Links
+    get:
+      description: Get detailed information about a short link
+      parameters:
+      - description: Short code of the link
+        in: path
+        name: shortCode
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ShortLink'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get link information
+      tags:
+      - Links
+    put:
+      consumes:
+      - application/json
+      description: Update certain fields of a short link such as TTL or expiry
+      parameters:
+      - description: Short code of the link
+        in: path
+        name: shortCode
+        required: true
+        type: string
+      - description: Fields to update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateLinkRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ShortLink'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update a short link
+      tags:
+      - Links
   /health:
     get:
       description: Get the health status of the service and its dependencies
@@ -57,3 +346,5 @@ swagger: "2.0"
 tags:
 - description: Health check endpoints
   name: Health
+- description: Short link operations
+  name: Links

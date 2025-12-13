@@ -16,6 +16,9 @@
 // @tag.name Health
 // @tag.description Health check endpoints
 
+// @tag.name Links
+// @tag.description Short link operations
+
 package main
 
 import (
@@ -30,6 +33,8 @@ import (
 	_ "github.com/Kosha-Nirman/tether/docs" // Import generated docs
 	"github.com/Kosha-Nirman/tether/src/api/handlers"
 	"github.com/Kosha-Nirman/tether/src/api/routes"
+	"github.com/Kosha-Nirman/tether/src/internal/repository"
+	"github.com/Kosha-Nirman/tether/src/internal/service"
 	"github.com/Kosha-Nirman/tether/src/pkg/cache"
 	"github.com/Kosha-Nirman/tether/src/pkg/config"
 	"github.com/Kosha-Nirman/tether/src/pkg/database"
@@ -104,6 +109,16 @@ func run() error {
 		}
 	}()
 
+	// * Initialize repositories
+	linkRepo := repository.NewLinkRepository(db.Database)
+
+	// * Initialize services
+	linkService := service.NewLinkService(linkRepo, cc, cfg)
+
+	// * Initialize handlers
+	healthHandler := handlers.NewHealthHandler(db, cc)
+	linkHandler := handlers.NewLinkHandler(linkService)
+
 	// * Setup Gin
 	r := gin.New()
 
@@ -115,11 +130,8 @@ func run() error {
 		r.Use(gin.Logger())
 	}
 
-	// * Initialize handlers
-	healthHandler := handlers.NewHealthHandler(db, cc)
-
 	// ? Setup all routes following Helix structure
-	routes.SetupRoutes(r, cfg, healthHandler)
+	routes.SetupRoutes(r, cfg, healthHandler, linkHandler)
 
 	// ? Http server
 	server := &http.Server{

@@ -13,7 +13,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func SetupRoutes(r *gin.Engine, config *config.Config, healthHandler *handlers.HealthHandler) {
+func SetupRoutes(r *gin.Engine, config *config.Config, healthHandler *handlers.HealthHandler, linkHandler *handlers.LinkHandler) {
 	// Health check routes
 	r.GET("/health", healthHandler.Health)
 
@@ -69,4 +69,26 @@ func SetupRoutes(r *gin.Engine, config *config.Config, healthHandler *handlers.H
 	// ? Apply Middleware
 	r.Use(middleware.CORSMiddleware(corsConfig))
 	r.Use(middleware.SecurityMiddleware(securityConfig))
+
+	// * API Routes with rate limiting
+	api := r.Group("/api")
+	api.Use(middleware.RateLimitingMiddleware())
+	{
+		// * Links management routes
+		links := api.Group("/links")
+		links.GET("", linkHandler.ListLinks)
+		links.GET("/:shortCode", linkHandler.GetLink)
+		links.PUT("/:shortCode", linkHandler.UpdateLink)
+		links.DELETE("/:shortCode", linkHandler.DeleteLink)
+		{
+			links.POST("", linkHandler.CreateLink)
+		}
+	}
+
+	// Redirect routes
+	redirect := r.Group("/")
+	{
+		redirect.GET("/:shortCode", linkHandler.RedirectLink)
+	}
+
 }
