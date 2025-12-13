@@ -175,13 +175,3 @@ func CacheKey(prefix, key string) string {
 func LinkCacheKey(shortCode string) string {
 	return CacheKey("link", shortCode)
 }
-
-// StatsCacheKey generates cache key for link statistics
-func StatsCacheKey(shortCode string) string {
-	return CacheKey("stats", shortCode)
-}
-
-// AnalyticsCacheKey generates cache key for analytics
-func AnalyticsCacheKey(shortCode, period string) string {
-	return CacheKey("analytics", fmt.Sprintf("%s:%s", shortCode, period))
-}

@@ -435,16 +435,6 @@ func TestCacheKeyFunctions(t *testing.T) {
 			func() string { return LinkCacheKey("abc") },
 			"tether:link:abc",
 		},
-		{
-			"StatsCacheKey",
-			func() string { return StatsCacheKey("xyz") },
-			"tether:stats:xyz",
-		},
-		{
-			"AnalyticsCacheKey",
-			func() string { return AnalyticsCacheKey("abc", "daily") },
-			"tether:analytics:abc:daily",
-		},
 	}
 
 	for _, tt := range tests {
