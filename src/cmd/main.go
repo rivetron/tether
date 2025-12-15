@@ -114,6 +114,11 @@ func run() error {
 
 	// * Initialize services
 	linkService := service.NewLinkService(linkRepo, cc, cfg)
+	cleanupService := service.NewCleanupService(linkService)
+
+	// * Start background cleanup service
+	cleanupService.Start()
+	defer cleanupService.Stop()
 
 	// * Initialize handlers
 	healthHandler := handlers.NewHealthHandler(db, cc)
