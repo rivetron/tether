@@ -262,6 +262,39 @@ func (s *LinkService) ListLinks(ctx context.Context, filters map[string]interfac
 	return links, total, nil
 }
 
+func (s *LinkService) CleanupExpiredLinks(ctx context.Context) (int, error) {
+	// * Get expired links (In Batches)
+	expiredLinks, err := s.linkRepo.GetExpiredLinks(ctx, 1000)
+	if err != nil {
+		return 0, err
+	}
+
+	if len(expiredLinks) == 0 {
+		return 0, nil
+	}
+
+	// * Extract shortcodes
+	shortCodes := make([]string, len(expiredLinks))
+	for i, link := range expiredLinks {
+		shortCodes[i] = link.ShortCode
+	}
+
+	// * Bulk Deactivate
+	if err := s.linkRepo.BulkDeactivate(ctx, shortCodes); err != nil {
+		return 0, nil
+	}
+
+	// * Remove from cache
+	for _, shortCode := range shortCodes {
+		cacheKey := cache.LinkCacheKey(shortCode)
+		if err := s.cache.Delete(ctx, cacheKey); err != nil {
+			log.Printf("Warning: Failed to delete deactivated link from cache: %v", err)
+		}
+	}
+
+	return len(expiredLinks), nil
+}
+
 // <-------------------- Helper Functions -------------------->
 
 func (s *LinkService) generateUniqueShortCode(ctx context.Context) (string, error) {
