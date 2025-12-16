@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"log"
 	"maps"
 	"time"
 
@@ -183,7 +184,11 @@ func (r *LinkRepository) List(ctx context.Context, filters map[string]interface{
 	if err != nil {
 		return nil, fmt.Errorf("failed to find links: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer func() {
+		if err := cursor.Close(ctx); err != nil {
+			log.Printf("failed to close cursor: %v", err)
+		}
+	}()
 
 	var links []*models.ShortLink
 	if err := cursor.All(ctx, &links); err != nil {
@@ -203,6 +208,35 @@ func (r *LinkRepository) CheckShortCodeExists(ctx context.Context, shortCode str
 	}
 
 	return count > 0, nil
+}
+
+// ? Get Expired links
+func (r *LinkRepository) GetExpiredLinks(ctx context.Context, limit int) ([]*models.ShortLink, error) {
+	filter := bson.M{
+		"expires_at": bson.M{"$lte": time.Now()},
+		"is_active":  true,
+	}
+
+	opts := options.Find().
+		SetLimit(int64(limit)).
+		SetSort(bson.D{{Key: "expires_at", Value: 1}})
+
+	cursor, err := r.collection.Find(ctx, filter, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find expired links: %w", err)
+	}
+	defer func() {
+		if err := cursor.Close(ctx); err != nil {
+			log.Printf("failed to close cursor: %v", err)
+		}
+	}()
+
+	var links []*models.ShortLink
+	if err := cursor.All(ctx, &links); err != nil {
+		return nil, fmt.Errorf("failed to decode expired links: %w", err)
+	}
+
+	return links, nil
 }
 
 // ? Bulk deactivate links
