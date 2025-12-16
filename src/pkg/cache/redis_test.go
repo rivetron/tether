@@ -273,7 +273,9 @@ func BenchmarkRedis_Connect(b *testing.B) {
 func TestRedis_SetAndGet(t *testing.T) {
 	mr, redisCache := setupTestRedis(t)
 	defer mr.Close()
-	defer redisCache.Close()
+	defer func() {
+		_ = redisCache.Close()
+	}()
 
 	ctx := context.Background()
 
@@ -308,7 +310,9 @@ func TestRedis_SetAndGet(t *testing.T) {
 func TestRedis_Get_KeyNotFound(t *testing.T) {
 	mr, redisCache := setupTestRedis(t)
 	defer mr.Close()
-	defer redisCache.Close()
+	defer func() {
+		_ = redisCache.Close()
+	}()
 
 	ctx := context.Background()
 
@@ -320,7 +324,9 @@ func TestRedis_Get_KeyNotFound(t *testing.T) {
 func TestRedis_Delete(t *testing.T) {
 	mr, redisCache := setupTestRedis(t)
 	defer mr.Close()
-	defer redisCache.Close()
+	defer func() {
+		_ = redisCache.Close()
+	}()
 
 	ctx := context.Background()
 
@@ -337,7 +343,9 @@ func TestRedis_Delete(t *testing.T) {
 func TestRedis_Exists(t *testing.T) {
 	mr, redisCache := setupTestRedis(t)
 	defer mr.Close()
-	defer redisCache.Close()
+	defer func() {
+		_ = redisCache.Close()
+	}()
 
 	ctx := context.Background()
 
@@ -355,7 +363,9 @@ func TestRedis_Exists(t *testing.T) {
 func TestRedis_IncrementFunctions(t *testing.T) {
 	mr, redisCache := setupTestRedis(t)
 	defer mr.Close()
-	defer redisCache.Close()
+	defer func() {
+		_ = redisCache.Close()
+	}()
 
 	ctx := context.Background()
 
@@ -371,7 +381,9 @@ func TestRedis_IncrementFunctions(t *testing.T) {
 func TestRedis_SetNX(t *testing.T) {
 	mr, redisCache := setupTestRedis(t)
 	defer mr.Close()
-	defer redisCache.Close()
+	defer func() {
+		_ = redisCache.Close()
+	}()
 
 	ctx := context.Background()
 
@@ -387,7 +399,9 @@ func TestRedis_SetNX(t *testing.T) {
 func TestRedis_BatchSetAndGet(t *testing.T) {
 	mr, redisCache := setupTestRedis(t)
 	defer mr.Close()
-	defer redisCache.Close()
+	defer func() {
+		_ = redisCache.Close()
+	}()
 
 	ctx := context.Background()
 
@@ -410,7 +424,9 @@ func TestRedis_BatchSetAndGet(t *testing.T) {
 func TestRedis_BatchGet_EmptyList(t *testing.T) {
 	mr, redisCache := setupTestRedis(t)
 	defer mr.Close()
-	defer redisCache.Close()
+	defer func() {
+		_ = redisCache.Close()
+	}()
 
 	ctx := context.Background()
 

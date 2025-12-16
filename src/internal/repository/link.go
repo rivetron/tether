@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"log"
 	"maps"
 	"time"
 
@@ -183,7 +184,11 @@ func (r *LinkRepository) List(ctx context.Context, filters map[string]interface{
 	if err != nil {
 		return nil, fmt.Errorf("failed to find links: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer func() {
+		if err := cursor.Close(ctx); err != nil {
+			log.Printf("failed to close cursor: %v", err)
+		}
+	}()
 
 	var links []*models.ShortLink
 	if err := cursor.All(ctx, &links); err != nil {
@@ -220,7 +225,11 @@ func (r *LinkRepository) GetExpiredLinks(ctx context.Context, limit int) ([]*mod
 	if err != nil {
 		return nil, fmt.Errorf("failed to find expired links: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer func() {
+		if err := cursor.Close(ctx); err != nil {
+			log.Printf("failed to close cursor: %v", err)
+		}
+	}()
 
 	var links []*models.ShortLink
 	if err := cursor.All(ctx, &links); err != nil {
