@@ -43,7 +43,7 @@ Ensure you have the following installed:
 1. **Clone and setup:**
 
    ```bash
-   git clone https://github.com/Kosha-Nirman/tether.git
+   git clone https://github.com/rivetron/tether.git
    cd tether
    cp .env.example .env
    ```

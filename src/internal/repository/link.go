@@ -7,7 +7,7 @@ import (
 	"maps"
 	"time"
 
-	"github.com/Kosha-Nirman/tether/src/internal/models"
+	"github.com/rivetron/tether/src/internal/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"

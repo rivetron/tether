@@ -5,9 +5,9 @@ package routes
 import (
 	"net/http"
 
-	"github.com/Kosha-Nirman/tether/src/api/handlers"
-	"github.com/Kosha-Nirman/tether/src/internal/middleware"
-	"github.com/Kosha-Nirman/tether/src/pkg/config"
+	"github.com/rivetron/tether/src/api/handlers"
+	"github.com/rivetron/tether/src/internal/middleware"
+	"github.com/rivetron/tether/src/pkg/config"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"

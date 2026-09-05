@@ -7,7 +7,7 @@
     "info": {
         "description": "A modern, scalable short URL service",
         "title": "Tether API",
-        "termsOfService": "https://github.com/Kosha-Nirman/tether",
+        "termsOfService": "https://github.com/rivetron/tether",
         "contact": {},
         "license": {
             "name": "MIT",

@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Kosha-Nirman/tether/src/internal/models"
-	"github.com/Kosha-Nirman/tether/src/internal/service"
-	"github.com/Kosha-Nirman/tether/src/pkg/utils"
+	"github.com/rivetron/tether/src/internal/models"
+	"github.com/rivetron/tether/src/internal/service"
+	"github.com/rivetron/tether/src/pkg/utils"
 	"github.com/gin-gonic/gin"
 )
 

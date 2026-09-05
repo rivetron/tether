@@ -9,7 +9,7 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "termsOfService": "https://github.com/Kosha-Nirman/tether",
+        "termsOfService": "https://github.com/rivetron/tether",
         "contact": {},
         "license": {
             "name": "MIT",

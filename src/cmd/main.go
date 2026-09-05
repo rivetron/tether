@@ -4,7 +4,7 @@
 // @title Tether API
 // @version 1.0.0
 // @description A modern, scalable short URL service
-// @termsOfService https://github.com/Kosha-Nirman/tether
+// @termsOfService https://github.com/rivetron/tether
 
 // @license.name MIT
 // @license.url https://opensource.org/licenses/MIT
@@ -30,14 +30,14 @@ import (
 	"syscall"
 	"time"
 
-	_ "github.com/Kosha-Nirman/tether/docs" // Import generated docs
-	"github.com/Kosha-Nirman/tether/src/api/handlers"
-	"github.com/Kosha-Nirman/tether/src/api/routes"
-	"github.com/Kosha-Nirman/tether/src/internal/repository"
-	"github.com/Kosha-Nirman/tether/src/internal/service"
-	"github.com/Kosha-Nirman/tether/src/pkg/cache"
-	"github.com/Kosha-Nirman/tether/src/pkg/config"
-	"github.com/Kosha-Nirman/tether/src/pkg/database"
+	_ "github.com/rivetron/tether/docs" // Import generated docs
+	"github.com/rivetron/tether/src/api/handlers"
+	"github.com/rivetron/tether/src/api/routes"
+	"github.com/rivetron/tether/src/internal/repository"
+	"github.com/rivetron/tether/src/internal/service"
+	"github.com/rivetron/tether/src/pkg/cache"
+	"github.com/rivetron/tether/src/pkg/config"
+	"github.com/rivetron/tether/src/pkg/database"
 	"github.com/gin-gonic/gin"
 )
 
