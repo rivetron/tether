@@ -30,6 +30,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	_ "github.com/rivetron/tether/docs" // Import generated docs
 	"github.com/rivetron/tether/src/api/handlers"
 	"github.com/rivetron/tether/src/api/routes"
@@ -38,7 +39,6 @@ import (
 	"github.com/rivetron/tether/src/pkg/cache"
 	"github.com/rivetron/tether/src/pkg/config"
 	"github.com/rivetron/tether/src/pkg/database"
-	"github.com/gin-gonic/gin"
 )
 
 func run() error {
