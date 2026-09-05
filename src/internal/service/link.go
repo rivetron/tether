@@ -6,11 +6,11 @@ import (
 	"log"
 	"time"
 
-	"github.com/Kosha-Nirman/tether/src/internal/models"
-	"github.com/Kosha-Nirman/tether/src/internal/repository"
-	"github.com/Kosha-Nirman/tether/src/pkg/cache"
-	"github.com/Kosha-Nirman/tether/src/pkg/config"
-	"github.com/Kosha-Nirman/tether/src/pkg/utils"
+	"github.com/rivetron/tether/src/internal/models"
+	"github.com/rivetron/tether/src/internal/repository"
+	"github.com/rivetron/tether/src/pkg/cache"
+	"github.com/rivetron/tether/src/pkg/config"
+	"github.com/rivetron/tether/src/pkg/utils"
 )
 
 type LinkService struct {

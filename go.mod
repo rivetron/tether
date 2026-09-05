@@ -1,4 +1,4 @@
-module github.com/Kosha-Nirman/tether
+module github.com/rivetron/tether
 
 go 1.27.1
 

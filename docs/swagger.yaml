@@ -139,7 +139,7 @@ info:
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
-  termsOfService: https://github.com/Kosha-Nirman/tether
+  termsOfService: https://github.com/rivetron/tether
   title: Tether API
   version: 1.0.0
 paths:
